@@ -1,0 +1,11 @@
+# TaskType
+---
+apiVersion: sirocco.cloud/v1alpha1
+kind: Ignitor
+metadata:
+  name: ignitor1
+spec:
+  description: Initiate the workflow ABC
+  scheduled:
+    cronjob: "*/50 * * * *"
+    now: false

@@ -1,0 +1,18 @@
+# TaskType
+---
+apiVersion: sirocco.cloud/v1alpha1
+kind: Task
+metadata:
+  name: task1
+spec:
+  description: This task should return true after 10 sec
+  startWhen:
+    ignitors:
+      - ignitor1
+    tasks:
+      onSuccess:
+        - task2
+        - task5
+      onFailure:
+        - task3
+        - task4

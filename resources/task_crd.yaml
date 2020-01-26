@@ -1,0 +1,41 @@
+# Task CR Definition
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: tasks.sirocco.cloud
+spec:
+  group: sirocco.cloud
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    kind: Task
+    shortNames:
+      - tk
+    plural: tasks
+    singular: task
+  additionalPrinterColumns:
+    - name: state
+      type: string
+      description: Current Status
+      JSONPath: .status.state
+    - name: lastSuccess
+      type: string
+      description: Last success datetime
+      JSONPath: .status.lastSuccess
+    - name: lastFailure
+      type: string
+      description: Last failure datetime
+      JSONPath: .status.lastFailure
+    - name: ignitors
+      type: string
+      description: Triggered by ignitors
+      JSONPath: .spec.startWhen.ignitors
+    - name: onSuccessTask
+      type: string
+      description: Triggered when these task succeded
+      JSONPath: .spec.startWhen.tasks.onSuccess
+    - name: onFailureTask
+      type: string
+      description: Triggered when these task succeded
+      JSONPath: .spec.startWhen.tasks.onFailure
