@@ -23,7 +23,18 @@ type TaskStatus struct {
 }
 
 type TaskSpec struct {
-	Name string
+	Description string `json:"description,omitempty"`
+	StartWhen StartWhen `json:"startWhen"`
+}
+
+type StartWhen struct {
+	Ignitors []string `json:"ignitors"`
+	Tasks StartOnTask `json:"tasks"`
+}
+
+type StartOnTask struct {
+	OnSuccess []string `json:"onSuccess"`
+	OnFailure []string `json:"onFailure"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

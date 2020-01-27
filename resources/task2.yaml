@@ -3,7 +3,7 @@
 apiVersion: sirocco.cloud/v1alpha1
 kind: Task
 metadata:
-  name: task1
+  name: task2
   labels:
     environment: production
     app: test1
@@ -11,11 +11,10 @@ spec:
   description: This task should return true after 10 sec
   startWhen:
     ignitors:
-      - ignitor1
+      - ignitor2
     tasks:
       onSuccess:
-        - task2
-        - task5
+        - task10
+        - task11
       onFailure:
-        - task3
-        - task4
+        - task2

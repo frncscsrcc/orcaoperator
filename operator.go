@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"time"
+	"orca"
 
 	orcaV1alpha1 "orcaoperator/pkg/clients/clientset/versioned"
 	orcaInformers "orcaoperator/pkg/clients/informers/externalversions"
+	"k8s.io/apimachinery/pkg/labels"
+//	task "orcaoperator/pkg/apis/task/v1alpha1"
 
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -41,6 +44,8 @@ type OrcaOperator struct {
 	coreInformerFactory informers.SharedInformerFactory
 	orcaClientSet       *orcaV1alpha1.Clientset
 	orcaInformerFactory orcaInformers.SharedInformerFactory
+
+	dataModel 			*orca.Orca
 }
 
 func New(config *restclient.Config) (*OrcaOperator, error) {
@@ -68,22 +73,50 @@ func New(config *restclient.Config) (*OrcaOperator, error) {
 	orcaOperator.coreInformerFactory = coreInformerFactory
 	orcaOperator.orcaClientSet = orcaClientSet
 	orcaOperator.orcaInformerFactory = orcaInformerFactory
+	orcaOperator.dataModel = orca.New()
 
 	return orcaOperator, nil
+}
+
+func (operator *OrcaOperator) updateTaskHandler(old, new interface{}) {
+	Show("CHANGED")
 }
 
 func (operator *OrcaOperator) Init() {
 	taskInformer := operator.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
 	taskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc : func(old, new interface{}){Show("UPDATEEEEEE!")},
+		UpdateFunc : operator.updateTaskHandler,
 	})
 	neverStop := make(<-chan struct{})
 	operator.orcaInformerFactory.Start(neverStop)
 	operator.orcaInformerFactory.WaitForCacheSync(neverStop)
+
+	tasks, err := taskInformer.Lister().Tasks("default").List(labels.Everything())
+	if err != nil{
+		Show(err)
+	}
+	dataModel := operator.dataModel
+	for _, task := range(tasks) {
+		name := task.ObjectMeta.Name
+		dataModel.RegisterTask(name)
+		t, _ := dataModel.GetTask(name)
+		for _, ignitorName := range(task.Spec.StartWhen.Ignitors ) {
+			dataModel.RegisterIgnitor(ignitorName)
+			t.AddStartOnIgnition(ignitorName)
+		}
+		for _, taskName := range(task.Spec.StartWhen.Tasks.OnSuccess){
+			t.AddStartOnSuccess(taskName)
+		}
+		for _, taskName := range(task.Spec.StartWhen.Tasks.OnFailure){
+			t.AddStartOnFailure(taskName)
+		}		
+		Show(dataModel)
+	}
+
 }
 
 func (operator *OrcaOperator) Run() {
-
+	Show("RUNNING!")
 }
 
 func Show(i interface{}) {
