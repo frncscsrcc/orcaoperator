@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	siroccov1alpha1 "orcaoperator/pkg/apis/task/v1alpha1"
+	siroccov1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"

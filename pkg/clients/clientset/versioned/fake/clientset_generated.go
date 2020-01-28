@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "orcaoperator/pkg/clients/clientset/versioned"
-	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/task/v1alpha1"
-	fakesiroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/task/v1alpha1/fake"
+	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1"
+	fakesiroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

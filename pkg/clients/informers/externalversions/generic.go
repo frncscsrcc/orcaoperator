@@ -20,7 +20,7 @@ package externalversions
 
 import (
 	"fmt"
-	v1alpha1 "orcaoperator/pkg/apis/task/v1alpha1"
+	v1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
 
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=sirocco.cloud, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("ignitors"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Sirocco().V1alpha1().Ignitors().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("tasks"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Sirocco().V1alpha1().Tasks().Informer()}, nil
 

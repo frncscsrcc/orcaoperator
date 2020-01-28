@@ -21,7 +21,7 @@ package externalversions
 import (
 	versioned "orcaoperator/pkg/clients/clientset/versioned"
 	internalinterfaces "orcaoperator/pkg/clients/informers/externalversions/internalinterfaces"
-	task "orcaoperator/pkg/clients/informers/externalversions/task"
+	orca "orcaoperator/pkg/clients/informers/externalversions/orca"
 	reflect "reflect"
 	sync "sync"
 	time "time"
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Sirocco() task.Interface
+	Sirocco() orca.Interface
 }
 
-func (f *sharedInformerFactory) Sirocco() task.Interface {
-	return task.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Sirocco() orca.Interface {
+	return orca.New(f, f.namespace, f.tweakListOptions)
 }

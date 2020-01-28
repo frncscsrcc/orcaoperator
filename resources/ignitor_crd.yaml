@@ -18,4 +18,4 @@ spec:
     - name: scheduled
       type: string
       description: When the ignitor is going to be triggered
-      JSONPath: .spec.scheduled.cronjob
+      JSONPath: .spec.scheduled

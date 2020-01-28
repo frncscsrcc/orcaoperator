@@ -5,14 +5,10 @@ kind: Task
 metadata:
   name: task2
   labels:
-    environment: production
     app: test1
 spec:
   description: This task should return true after 10 sec
-  startWhen:
-    ignitors:
-      - ignitor2
-    tasks:
-      onSuccess:
-        - task1
-      onFailure:
+  startOnIgnition:
+  startOnSuccess:
+    - task1
+  startOnFailure:

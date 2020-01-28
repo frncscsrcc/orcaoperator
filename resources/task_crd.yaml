@@ -30,12 +30,12 @@ spec:
     - name: ignitors
       type: string
       description: Triggered by ignitors
-      JSONPath: .spec.startWhen.ignitors
+      JSONPath: .spec.startOnIgnition
     - name: onSuccessTask
       type: string
       description: Triggered when these task succeded
-      JSONPath: .spec.startWhen.tasks.onSuccess
+      JSONPath: .spec.startOnSuccess
     - name: onFailureTask
       type: string
       description: Triggered when these task succeded
-      JSONPath: .spec.startWhen.tasks.onFailure
+      JSONPath: .spec.startOnFailure
