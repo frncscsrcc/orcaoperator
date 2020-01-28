@@ -14,8 +14,4 @@ spec:
       - ignitor1
     tasks:
       onSuccess:
-        - task2
-        - task5
       onFailure:
-        - task3
-        - task4
