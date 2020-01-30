@@ -19,7 +19,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
 	scheme "orcaoperator/pkg/clients/clientset/versioned/scheme"
 	"time"
 
@@ -27,6 +26,7 @@ import (
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
+	v1alpha1 "orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 )
 
 // IgnitorsGetter has a method to return a IgnitorInterface.

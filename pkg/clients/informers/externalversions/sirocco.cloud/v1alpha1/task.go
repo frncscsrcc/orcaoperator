@@ -19,16 +19,16 @@ limitations under the License.
 package v1alpha1
 
 import (
-	taskv1alpha1 "orcaoperator/pkg/apis/task/v1alpha1"
 	versioned "orcaoperator/pkg/clients/clientset/versioned"
 	internalinterfaces "orcaoperator/pkg/clients/informers/externalversions/internalinterfaces"
-	v1alpha1 "orcaoperator/pkg/clients/listers/task/v1alpha1"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	siroccocloudv1alpha1 "orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	v1alpha1 "orcaoperator/pkg/clients/listers/sirocco.cloud/v1alpha1"
 )
 
 // TaskInformer provides access to a shared informer and lister for
@@ -70,7 +70,7 @@ func NewFilteredTaskInformer(client versioned.Interface, namespace string, resyn
 				return client.SiroccoV1alpha1().Tasks(namespace).Watch(options)
 			},
 		},
-		&taskv1alpha1.Task{},
+		&siroccocloudv1alpha1.Task{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *taskInformer) defaultInformer(client versioned.Interface, resyncPeriod 
 }
 
 func (f *taskInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&taskv1alpha1.Task{}, f.defaultInformer)
+	return f.factory.InformerFor(&siroccocloudv1alpha1.Task{}, f.defaultInformer)
 }
 
 func (f *taskInformer) Lister() v1alpha1.TaskLister {

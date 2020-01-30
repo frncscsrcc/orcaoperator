@@ -20,11 +20,11 @@ package versioned
 
 import (
 	"fmt"
-	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
+	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/sirocco.cloud/v1alpha1"
 )
 
 type Interface interface {

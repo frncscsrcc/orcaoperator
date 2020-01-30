@@ -21,7 +21,6 @@ package externalversions
 import (
 	versioned "orcaoperator/pkg/clients/clientset/versioned"
 	internalinterfaces "orcaoperator/pkg/clients/informers/externalversions/internalinterfaces"
-	orca "orcaoperator/pkg/clients/informers/externalversions/orca"
 	reflect "reflect"
 	sync "sync"
 	time "time"
@@ -30,6 +29,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
+	siroccocloud "orcaoperator/pkg/clients/informers/externalversions/sirocco.cloud"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Sirocco() orca.Interface
+	Sirocco() siroccocloud.Interface
 }
 
-func (f *sharedInformerFactory) Sirocco() orca.Interface {
-	return orca.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Sirocco() siroccocloud.Interface {
+	return siroccocloud.New(f, f.namespace, f.tweakListOptions)
 }

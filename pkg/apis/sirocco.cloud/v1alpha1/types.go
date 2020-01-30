@@ -11,6 +11,7 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=sirocco.cloud
 
 // Task is a top-level type
 type Task struct {
@@ -60,6 +61,7 @@ type TaskList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=sirocco.cloud
 
 // Ignitor is a top-level type
 type Ignitor struct {

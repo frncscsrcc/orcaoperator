@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
 	"orcaoperator/pkg/clients/clientset/versioned/scheme"
 
 	rest "k8s.io/client-go/rest"
+	v1alpha1 "orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 )
 
 type SiroccoV1alpha1Interface interface {

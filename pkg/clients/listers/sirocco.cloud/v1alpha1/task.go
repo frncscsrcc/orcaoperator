@@ -19,11 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
+	v1alpha1 "orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 )
 
 // TaskLister helps list Tasks.

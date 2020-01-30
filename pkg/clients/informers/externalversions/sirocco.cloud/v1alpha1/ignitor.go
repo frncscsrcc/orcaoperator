@@ -19,71 +19,71 @@ limitations under the License.
 package v1alpha1
 
 import (
-	orcav1alpha1 "orcaoperator/pkg/apis/orca/v1alpha1"
 	versioned "orcaoperator/pkg/clients/clientset/versioned"
 	internalinterfaces "orcaoperator/pkg/clients/informers/externalversions/internalinterfaces"
-	v1alpha1 "orcaoperator/pkg/clients/listers/orca/v1alpha1"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
+	siroccocloudv1alpha1 "orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	v1alpha1 "orcaoperator/pkg/clients/listers/sirocco.cloud/v1alpha1"
 )
 
-// TaskInformer provides access to a shared informer and lister for
-// Tasks.
-type TaskInformer interface {
+// IgnitorInformer provides access to a shared informer and lister for
+// Ignitors.
+type IgnitorInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.TaskLister
+	Lister() v1alpha1.IgnitorLister
 }
 
-type taskInformer struct {
+type ignitorInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewTaskInformer constructs a new informer for Task type.
+// NewIgnitorInformer constructs a new informer for Ignitor type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredTaskInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewIgnitorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredIgnitorInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredTaskInformer constructs a new informer for Task type.
+// NewFilteredIgnitorInformer constructs a new informer for Ignitor type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredIgnitorInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SiroccoV1alpha1().Tasks(namespace).List(options)
+				return client.SiroccoV1alpha1().Ignitors(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SiroccoV1alpha1().Tasks(namespace).Watch(options)
+				return client.SiroccoV1alpha1().Ignitors(namespace).Watch(options)
 			},
 		},
-		&orcav1alpha1.Task{},
+		&siroccocloudv1alpha1.Ignitor{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *taskInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredTaskInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *ignitorInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredIgnitorInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *taskInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&orcav1alpha1.Task{}, f.defaultInformer)
+func (f *ignitorInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&siroccocloudv1alpha1.Ignitor{}, f.defaultInformer)
 }
 
-func (f *taskInformer) Lister() v1alpha1.TaskLister {
-	return v1alpha1.NewTaskLister(f.Informer().GetIndexer())
+func (f *ignitorInformer) Lister() v1alpha1.IgnitorLister {
+	return v1alpha1.NewIgnitorLister(f.Informer().GetIndexer())
 }

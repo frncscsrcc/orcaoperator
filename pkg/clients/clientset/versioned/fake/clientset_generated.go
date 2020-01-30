@@ -20,14 +20,14 @@ package fake
 
 import (
 	clientset "orcaoperator/pkg/clients/clientset/versioned"
-	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1"
-	fakesiroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
+	siroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/sirocco.cloud/v1alpha1"
+	fakesiroccov1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/sirocco.cloud/v1alpha1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

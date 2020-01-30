@@ -19,10 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/orca/v1alpha1"
-
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
+	v1alpha1 "orcaoperator/pkg/clients/clientset/versioned/typed/sirocco.cloud/v1alpha1"
 )
 
 type FakeSiroccoV1alpha1 struct {
