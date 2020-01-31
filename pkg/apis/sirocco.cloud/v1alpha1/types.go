@@ -1,6 +1,6 @@
 package v1alpha1
 
-import ( 
+import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"orcaoperator/pkg/flow"
 )
@@ -27,9 +27,9 @@ type Task struct {
 }
 
 type TaskStatus struct {
-	State flow.Status `json:"state"`
-	LastSuccess string `json:"lastSuccess"`
-	LastFailure string `json:"lastFailure"`
+	State       flow.Status `json:"state"`
+	LastSuccess string      `json:"lastSuccess"`
+	LastFailure string      `json:"lastFailure"`
 }
 
 type TaskSpec struct {
@@ -39,8 +39,8 @@ type TaskSpec struct {
 	StartOnIgnition []string `json:"startOnIgnition,omitempty"`
 	// +optional
 	StartOnSuccess []string `json:"startOnSuccess,omitempty"`
-	// +optional	
-	StartOnFailure []string `json:"startOnFailure,omitempty"`	
+	// +optional
+	StartOnFailure []string `json:"startOnFailure,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -53,7 +53,6 @@ type TaskList struct {
 
 	Items []Task `json:"items"`
 }
-
 
 // -------------------------------------------------------------------
 // IGNITOR
@@ -95,4 +94,3 @@ type IgnitorList struct {
 
 	Items []Ignitor `json:"items"`
 }
-

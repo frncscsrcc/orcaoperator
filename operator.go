@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"orcaoperator/pkg/operator"
 	"k8s.io/client-go/tools/clientcmd"
+	"orcaoperator/pkg/operator"
 )
 
 func main() {
@@ -24,4 +24,3 @@ func main() {
 	operator.Run()
 
 }
-

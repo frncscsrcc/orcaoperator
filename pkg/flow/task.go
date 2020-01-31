@@ -10,8 +10,9 @@ type TaskOptions struct {
 
 // Task reppresents a specific step in the workflow
 type Task struct {
-	flow *Flow
-	name string
+	flow       *Flow
+	name       string
+	generation int64
 
 	successActions []Action
 	failureActions []Action
@@ -80,8 +81,6 @@ func (t *Task) AddStartOnIgnition(ignitorName string) {
 	if _, exists := t.flow.ingnitorsToTasks[ignitorName]; !exists {
 		t.flow.ingnitorsToTasks[ignitorName] = make(map[string]bool)
 	}
-
-	t.flow.ingnitorsToTasks[ignitorName][t.name] = true
 }
 
 // AddStartOnSuccess set a listener for the current task, that will start if
@@ -107,6 +106,20 @@ func (t *Task) AddStartOnFailure(taskName string) {
 	}
 
 	t.flow.failureToTasks[taskName][t.name] = true
+}
+
+// SetGeneration updates the task generation (version)
+func (t *Task) SetGeneration(generation int64) {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+	t.generation = generation
+}
+
+// IsUpdated checks if a task definition is updated
+func (t *Task) IsUpdated(generation int64) bool {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+	return generation > t.generation
 }
 
 func (f *Flow) removeTaskFromOnIgnition(name string) bool {

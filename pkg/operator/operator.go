@@ -19,11 +19,11 @@ type Operator struct {
 	orcaClientSet       *orcaV1alpha1.Clientset
 	orcaInformerFactory orcaInformers.SharedInformerFactory
 
-	flow        *flow.Flow
+	flow *flow.Flow
 
 	initialized bool
 	done        chan struct{}
-	log      Log
+	log         Log
 }
 
 func New(config *restclient.Config) (*Operator, error) {
@@ -36,7 +36,7 @@ func New(config *restclient.Config) (*Operator, error) {
 	}
 
 	// Initialize a shared informer factory for the core objects (eg: pods)
-	coreInformerFactory := informers.NewSharedInformerFactory(coreClientSet, time.Second*30)
+	coreInformerFactory := informers.NewSharedInformerFactory(coreClientSet, time.Second*10)
 
 	// Keep a reference of the orca specific CRD (tasks and ignitors) client set
 	orcaClientSet, err := orcaV1alpha1.NewForConfig(config)
@@ -45,7 +45,7 @@ func New(config *restclient.Config) (*Operator, error) {
 	}
 
 	// Initialize a shared informer factory for the orca objects (tasks and ignitors)
-	orcaInformerFactory := orcaInformers.NewSharedInformerFactory(orcaClientSet, time.Second*30)
+	orcaInformerFactory := orcaInformers.NewSharedInformerFactory(orcaClientSet, time.Second*10)
 
 	o.coreClientSet = coreClientSet
 	o.coreInformerFactory = coreInformerFactory
@@ -62,7 +62,7 @@ func (o *Operator) Init() {
 	// Initialize the task informers
 	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
 	taskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: o.addedTaskHandler,
+		AddFunc:    o.addedTaskHandler,
 		UpdateFunc: o.updatedTaskHandler,
 		DeleteFunc: o.deletedTaskHandler,
 	})
@@ -70,9 +70,9 @@ func (o *Operator) Init() {
 	// Initialize the ignitor informers
 	ignitorsInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Ignitors()
 	ignitorsInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: o.addedIgnitorHandler,
+		AddFunc:    o.addedIgnitorHandler,
 		UpdateFunc: o.updatedIgnitorHandler,
-		DeleteFunc: o.deletedIgnitorHandler,		
+		DeleteFunc: o.deletedIgnitorHandler,
 	})
 
 	// Activate the informer and wait for the cache
@@ -92,12 +92,15 @@ func (o *Operator) Init() {
 		Show(task.TypeMeta)
 		// Register the task using the name
 		name := task.ObjectMeta.Name
-		flow.RegisterTask(name)
-		t, _ := flow.GetTask(name)
-		
+		t, err := flow.RegisterTask(name)
+		if err != nil {
+			o.log.Error.Println(err)
+			continue
+		}
+		t.SetGeneration(task.ObjectMeta.Generation)
+
 		// Register the ignitors
 		for _, ignitorName := range task.Spec.StartOnIgnition {
-			flow.RegisterIgnitor(ignitorName)
 			t.AddStartOnIgnition(ignitorName)
 		}
 
@@ -121,10 +124,15 @@ func (o *Operator) Init() {
 
 	// For each existing ignitor
 	for _, ignitor := range ignitors {
-		Show(ignitor)
 		// Register the ignitor using the name
 		name := ignitor.ObjectMeta.Name
-		flow.RegisterIgnitor(name)
+		ign, err := flow.RegisterIgnitor(name)
+		if err != nil {
+			o.log.Error.Println(err)
+			continue
+		}
+
+		ign.SetGeneration(ignitor.ObjectMeta.Generation)
 	}
 
 	// Mark the fact the object is initialized
@@ -133,11 +141,10 @@ func (o *Operator) Init() {
 	o.log.Info.Println("Orca is initialized")
 }
 
-
 func (o *Operator) Run() {
 	o.log.Info.Println("Orca is running")
 	// Wait done signal
-	<- o.done
+	<-o.done
 }
 
 func Show(i interface{}) {
