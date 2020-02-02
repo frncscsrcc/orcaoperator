@@ -81,6 +81,8 @@ func (t *Task) AddStartOnIgnition(ignitorName string) {
 	if _, exists := t.flow.ingnitorsToTasks[ignitorName]; !exists {
 		t.flow.ingnitorsToTasks[ignitorName] = make(map[string]bool)
 	}
+
+	t.flow.ingnitorsToTasks[ignitorName][t.name] = true
 }
 
 // AddStartOnSuccess set a listener for the current task, that will start if

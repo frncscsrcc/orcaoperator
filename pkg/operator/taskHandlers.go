@@ -2,7 +2,48 @@ package operator
 
 import (
 	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	"errors"
+	"k8s.io/apimachinery/pkg/labels"
 )
+
+func (o *Operator) registerTasks() error{
+	// Initialize the flow (based on task and ignitors already present in the cluster)
+	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()	
+	tasks, err := taskInformer.Lister().Tasks("default").List(labels.Everything())
+	if err != nil {
+		return err
+	}
+
+	flow := o.flow
+	// For each existing task
+	for _, task := range tasks {
+		// Register the task using the name
+		name := task.ObjectMeta.Name
+		t, err := flow.RegisterTask(name)
+		if err != nil {
+			o.log.Error.Println(err)
+			continue
+		}
+		t.SetGeneration(task.ObjectMeta.Generation)
+
+		// Register the ignitors
+		for _, ignitorName := range task.Spec.StartOnIgnition {
+			t.AddStartOnIgnition(ignitorName)
+		}
+
+		// Register StartOnSuccess tasks
+		for _, taskName := range task.Spec.StartOnSuccess {
+			t.AddStartOnSuccess(taskName)
+		}
+
+		// Register StartOnFailure tasks
+		for _, taskName := range task.Spec.StartOnFailure {
+			t.AddStartOnFailure(taskName)
+		}
+	}
+
+	return nil
+}
 
 func (o *Operator) addedTaskHandler(new interface{}) {
 	if !o.initialized {
@@ -76,4 +117,26 @@ func (o *Operator) deletedTaskHandler(old interface{}) {
 	if ok := o.flow.RemoveTask(name); ok {
 		o.log.Info.Println("Removed task " + name)
 	}
+}
+
+func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
+	tasksInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
+	task, err := tasksInformer.Lister().Tasks("default").Get(taskName)
+	if err != nil {
+		return nil, errors.New("task " + taskName + " is not regitered in the cluster")
+	}
+	return task, nil
+}
+
+func (o  *Operator) executeTask(taskName string, done func()) error {
+	// Be sure that the task at this point is still present in the cluster
+	_, err := o.getTaskByName(taskName)
+	if err != nil {
+		return err
+	}
+
+	o.log.Info.Println("Executing task " + taskName + " (background)")
+	go done()
+
+	return nil
 }

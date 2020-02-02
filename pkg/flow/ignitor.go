@@ -22,7 +22,7 @@ func (f *Flow) RegisterIgnitor(name string) (*Ignitor, error) {
 		flow: f,
 		name: name,
 	}
-	f.ingnitorsToTasks[name] = make(map[string]bool)
+
 	f.ignitors[name] = i
 	return i, nil
 }
@@ -61,4 +61,16 @@ func (i *Ignitor) IsUpdated(generation int64) bool {
 	i.flow.m.Lock()
 	defer i.flow.m.Unlock()
 	return generation > i.generation
+}
+
+// GetTaskToExecute returns a list of *Tasks to be executed
+func (i *Ignitor) GetTaskNamesToExecute() []string {
+	i.flow.m.Lock()
+	defer i.flow.m.Unlock()
+
+	names := make([]string, 0)
+	for taskName,_ := range i.flow.ingnitorsToTasks[i.name] {
+		names = append(names, taskName)
+	}
+	return names
 }

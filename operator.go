@@ -2,18 +2,19 @@ package main
 
 import (
 	"flag"
-	"k8s.io/client-go/tools/clientcmd"
 	"orcaoperator/pkg/operator"
 )
 
 func main() {
+	config := operator.GetDefaultConfig()
+	
 	kubeconfig := flag.String("kubeconfig", "~/.kube/config", "kubeconfig file")
+	debugLevel := flag.String("debug", "INFO", "Debug level")
 	flag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err)
-	}
+	config.KubeConfig = *kubeconfig
+	config.DebugLevel = *debugLevel
+
 
 	operator, err := operator.New(config)
 	if err != nil {

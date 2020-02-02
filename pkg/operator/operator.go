@@ -2,15 +2,17 @@ package operator
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
+//	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/util/workqueue"
 	"k8s.io/client-go/tools/cache"
 	orcaV1alpha1 "orcaoperator/pkg/clients/clientset/versioned"
 	orcaInformers "orcaoperator/pkg/clients/informers/externalversions"
 	"orcaoperator/pkg/flow"
 	"time"
+		"k8s.io/client-go/tools/clientcmd"
+
 )
 
 type Operator struct {
@@ -19,6 +21,8 @@ type Operator struct {
 	orcaClientSet       *orcaV1alpha1.Clientset
 	orcaInformerFactory orcaInformers.SharedInformerFactory
 
+	workqueue workqueue.DelayingInterface
+
 	flow *flow.Flow
 
 	initialized bool
@@ -26,8 +30,13 @@ type Operator struct {
 	log         Log
 }
 
-func New(config *restclient.Config) (*Operator, error) {
+func New(appConfig Config) (*Operator, error) {
 	o := &Operator{}
+
+	config, err := clientcmd.BuildConfigFromFlags("", appConfig.KubeConfig)
+	if err != nil {
+		panic(err)
+	}
 
 	// Keep a reference of the kubernetes core (pods, ...) client set
 	coreClientSet, err := kubernetes.NewForConfig(config)
@@ -36,7 +45,7 @@ func New(config *restclient.Config) (*Operator, error) {
 	}
 
 	// Initialize a shared informer factory for the core objects (eg: pods)
-	coreInformerFactory := informers.NewSharedInformerFactory(coreClientSet, time.Second*10)
+	coreInformerFactory := informers.NewSharedInformerFactory(coreClientSet, time.Second*30)
 
 	// Keep a reference of the orca specific CRD (tasks and ignitors) client set
 	orcaClientSet, err := orcaV1alpha1.NewForConfig(config)
@@ -45,15 +54,16 @@ func New(config *restclient.Config) (*Operator, error) {
 	}
 
 	// Initialize a shared informer factory for the orca objects (tasks and ignitors)
-	orcaInformerFactory := orcaInformers.NewSharedInformerFactory(orcaClientSet, time.Second*10)
+	orcaInformerFactory := orcaInformers.NewSharedInformerFactory(orcaClientSet, time.Second*30)
 
 	o.coreClientSet = coreClientSet
 	o.coreInformerFactory = coreInformerFactory
 	o.orcaClientSet = orcaClientSet
 	o.orcaInformerFactory = orcaInformerFactory
+	o.workqueue =  workqueue.NewDelayingQueue()
 	o.flow = flow.New()
 	o.done = make(chan struct{})
-	o.log = NewLog()
+	o.log = NewLog(appConfig.DebugLevel)
 
 	return o, nil
 }
@@ -79,60 +89,14 @@ func (o *Operator) Init() {
 	o.orcaInformerFactory.Start(o.done)
 	o.orcaInformerFactory.WaitForCacheSync(o.done)
 
-	// Initialize the initial flow (based on task and ignitors already present in the cluster)
-	tasks, err := taskInformer.Lister().Tasks("default").List(labels.Everything())
-	if err != nil {
-		Show(err)
-		return
+	// Register the tasks already present in the cluster
+	if err := o.registerTasks(); err != nil {
+		o.log.Error.Println("Problem in task initialization. Skip it.")
 	}
 
-	flow := o.flow
-	// For each existing task
-	for _, task := range tasks {
-		Show(task.TypeMeta)
-		// Register the task using the name
-		name := task.ObjectMeta.Name
-		t, err := flow.RegisterTask(name)
-		if err != nil {
-			o.log.Error.Println(err)
-			continue
-		}
-		t.SetGeneration(task.ObjectMeta.Generation)
-
-		// Register the ignitors
-		for _, ignitorName := range task.Spec.StartOnIgnition {
-			t.AddStartOnIgnition(ignitorName)
-		}
-
-		// Register StartOnSuccess tasks
-		for _, taskName := range task.Spec.StartOnSuccess {
-			t.AddStartOnSuccess(taskName)
-		}
-
-		// Register StartOnFailure tasks
-		for _, taskName := range task.Spec.StartOnFailure {
-			t.AddStartOnFailure(taskName)
-		}
-	}
-
-	// Initialize the initial flow (based on task and ignitors already present in the cluster)
-	ignitors, err := ignitorsInformer.Lister().Ignitors("default").List(labels.Everything())
-	if err != nil {
-		Show(err)
-		return
-	}
-
-	// For each existing ignitor
-	for _, ignitor := range ignitors {
-		// Register the ignitor using the name
-		name := ignitor.ObjectMeta.Name
-		ign, err := flow.RegisterIgnitor(name)
-		if err != nil {
-			o.log.Error.Println(err)
-			continue
-		}
-
-		ign.SetGeneration(ignitor.ObjectMeta.Generation)
+	// Register the ingitors already present in the cluster
+	if err := o.registerIgnitors(); err != nil {
+		o.log.Error.Println("Problem in ingitor initialization. Skip it.")
 	}
 
 	// Mark the fact the object is initialized
@@ -143,8 +107,59 @@ func (o *Operator) Init() {
 
 func (o *Operator) Run() {
 	o.log.Info.Println("Orca is running")
-	// Wait done signal
-	<-o.done
+
+	// Be sure the done channel triggers a shutdown
+	// This function is execute in a separate thread
+	go func(o *Operator) {
+		// Wait done signal
+		<-o.done
+		o.workqueue.ShutDown()
+	}(o)
+
+	for true {
+		generic, shutdown := o.workqueue.Get()
+		if shutdown {
+			break
+		}
+
+		var ok bool
+		var qi queueItem
+		
+		// Cast the item to be a queueItem structure
+		qi, ok = generic.(queueItem)
+		if !ok {
+			o.log.Info.Println("Invalid working queue item. Just ignoring it.")
+			continue
+		}
+
+		o.log.Trace.Println("Received queue item " + qi.operation + " for " + qi.item)
+
+		// Callback function to call when the queue item is processed
+		itemDone := func (){
+			o.workqueue.Done(qi)
+		}
+
+		switch qi.getOperation() {
+
+		case "EXECUTE_IGNITOR":
+			o.executeIgnitor(qi.item, itemDone)
+
+		case "EXECUTE_TASK": {
+			o.executeTask(qi.item, itemDone)
+
+			// go func(o *Operator){
+			// 	o.workqueue.Done(qi)
+			// }(o)
+		}
+		
+
+		case "DELETE_IGNITOR":{
+			o.deleteIgnitor(qi.item, itemDone)
+		}
+		default:
+
+		}
+	}
 }
 
 func Show(i interface{}) {
