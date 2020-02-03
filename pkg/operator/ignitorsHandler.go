@@ -157,8 +157,9 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 		return err
 	}
 
-	// In case the ingitor scheduler was "NOW", it need to be removed from the cluster
-	if strings.ToUpper(ignitor.Spec.Scheduled) == "NOW" {
+	// In case the ingitor scheduler was "NOW" or in the At-like format,
+	// it need to be removed from the cluster
+	if ! isCronJobSchedule(ignitor.Spec.Scheduled) {
 		o.ququeIgnitorDeletion(ignitorName)
 	} else {
 		// Otherwise reschedule
@@ -175,6 +176,8 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 	if err != nil {
 		return err
 	}
+
+	taskCount := 0
 	for _, taskName := range flowIgnitor.GetTaskNamesToExecute() {
 		// Be sure the task is still registered in the internal model
 		_, err := o.flow.GetTask(taskName)
@@ -182,7 +185,12 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 			continue
 		}
 		// Add the task in the execution queue
+		taskCount++
 		o.ququeTaskExecution(taskName)
+	}
+
+	if taskCount == 0 {
+		o.log.Warning.Println("No task associated with ignitor " + ignitorName + ". Noting to do.")
 	}
 
 	done()
@@ -238,4 +246,11 @@ func nextExecutionInterval(schedule string) (time.Duration, error) {
 	}
 
 	return 0 * time.Second, errors.New("invalid schedule")
+}
+
+func isCronJobSchedule(schedule string) bool {
+	if _, err := cronexpr.Parse(schedule); err != nil {
+		return false
+	}
+	return true
 }

@@ -7,8 +7,15 @@ metadata:
   labels:
     app: test1
 spec:
-  description: This task should return true after 10 sec
+  description: This task should return true after 10 sec.
   startOnIgnition:
+    - ignitor1
   startOnSuccess:
-    - task1
   startOnFailure:
+  template:
+    spec:
+      containers:
+      - name: pi
+        image: perl
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(20)"]
+      restartPolicy: Never

@@ -196,6 +196,7 @@ func (in *TaskSpec) DeepCopyInto(out *TaskSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	in.Template.DeepCopyInto(&out.Template)
 	return
 }
 
