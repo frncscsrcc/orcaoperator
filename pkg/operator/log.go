@@ -1,16 +1,16 @@
 package operator
 
 import (
-	"strings"
+	"github.com/gookit/color"
 	"io/ioutil"
 	"log"
 	"os"
-	"github.com/gookit/color"
+	"strings"
 )
 
 var green = color.FgGreen.Render
 var red = color.FgRed.Render
-
+var yellow = color.FgYellow.Render
 
 type Log struct {
 	Trace   *log.Logger
@@ -28,14 +28,14 @@ func NewLog(debugLevel string) Log {
 
 	l := Log{}
 
-	if strings.ToUpper(debugLevel) == "TRACE"{
-	l.Trace = log.New(traceHandle,
-		"TRACE: ",
-		log.Ldate|log.Ltime)
+	if strings.ToUpper(debugLevel) == "TRACE" {
+		l.Trace = log.New(traceHandle,
+			yellow("TRACE: "),
+			log.Ldate|log.Ltime)
 	} else {
-	l.Trace = log.New(dischargeHandle,
-		"TRACE: ",
-		log.Ldate|log.Ltime)		
+		l.Trace = log.New(dischargeHandle,
+			"TRACE: ",
+			log.Ldate|log.Ltime)
 	}
 
 	l.Info = log.New(infoHandle,

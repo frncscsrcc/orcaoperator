@@ -69,7 +69,7 @@ func (i *Ignitor) GetTaskNamesToExecute() []string {
 	defer i.flow.m.Unlock()
 
 	names := make([]string, 0)
-	for taskName,_ := range i.flow.ingnitorsToTasks[i.name] {
+	for taskName, _ := range i.flow.ingnitorsToTasks[i.name] {
 		names = append(names, taskName)
 	}
 	return names

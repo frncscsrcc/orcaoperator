@@ -1,14 +1,14 @@
 package operator
 
 import (
-	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 	"errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 )
 
-func (o *Operator) registerTasks() error{
+func (o *Operator) registerTasks() error {
 	// Initialize the flow (based on task and ignitors already present in the cluster)
-	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()	
+	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
 	tasks, err := taskInformer.Lister().Tasks("default").List(labels.Everything())
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
 	return task, nil
 }
 
-func (o  *Operator) executeTask(taskName string, done func()) error {
+func (o *Operator) executeTask(taskName string, done func()) error {
 	// Be sure that the task at this point is still present in the cluster
 	_, err := o.getTaskByName(taskName)
 	if err != nil {

@@ -6,33 +6,33 @@ import (
 
 type queueItem struct {
 	operation string
-	item string
+	item      string
 }
 
 func (qi queueItem) getOperation() string {
 	return qi.operation
 }
 
-func (o *Operator) ququeIgnitorExecution(duration time.Duration, ignitorName string){
+func (o *Operator) ququeIgnitorExecution(duration time.Duration, ignitorName string) {
 	qi := queueItem{
 		operation: "EXECUTE_IGNITOR",
-		item: ignitorName,
+		item:      ignitorName,
 	}
 	o.workqueue.AddAfter(qi, duration)
 }
 
-func (o *Operator) ququeTaskExecution(taskName string){
+func (o *Operator) ququeTaskExecution(taskName string) {
 	qi := queueItem{
 		operation: "EXECUTE_TASK",
-		item: taskName,
+		item:      taskName,
 	}
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
 
-func (o *Operator) ququeIgnitorDeletion(ignitorName string){
+func (o *Operator) ququeIgnitorDeletion(ignitorName string) {
 	qi := queueItem{
 		operation: "DELETE_IGNITOR",
-		item: ignitorName,
+		item:      ignitorName,
 	}
-	o.workqueue.AddAfter(qi, time.Duration(0))	
+	o.workqueue.AddAfter(qi, time.Duration(0))
 }

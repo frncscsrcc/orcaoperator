@@ -1,17 +1,17 @@
 package operator
 
 import (
-"fmt"
-	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"github.com/gorhill/cronexpr"
-	"time"
-	"strings"
 	"errors"
+	"fmt"
+	"github.com/gorhill/cronexpr"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	"strings"
+	"time"
 )
 
-func (o *Operator) registerIgnitors() error{
+func (o *Operator) registerIgnitors() error {
 	// Initialize the initial flow (based on task and ignitors already present in the cluster)
 	ignitorsInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Ignitors()
 	ignitors, err := ignitorsInformer.Lister().Ignitors("default").List(labels.Everything())
@@ -32,7 +32,7 @@ func (o *Operator) registerIgnitors() error{
 		ign.SetGeneration(ignitor.ObjectMeta.Generation)
 
 		// Set the schedule for this ingitor
-		if err := o.registerIgnitorSchedule(ignitor); err != nil{
+		if err := o.registerIgnitorSchedule(ignitor); err != nil {
 			o.log.Error.Println(err)
 			continue
 		}
@@ -40,7 +40,6 @@ func (o *Operator) registerIgnitors() error{
 
 	return nil
 }
-
 
 func (o *Operator) addedIgnitorHandler(new interface{}) {
 	if !o.initialized {
@@ -66,42 +65,12 @@ func (o *Operator) addedIgnitorHandler(new interface{}) {
 		ign.SetGeneration(ignitor.ObjectMeta.Generation)
 
 		// Set the schedule for this ingitor
-		if err := o.registerIgnitorSchedule(ignitor); err != nil{
+		if err := o.registerIgnitorSchedule(ignitor); err != nil {
 			o.log.Error.Println(err)
 			return
 		}
 		o.log.Info.Println("Registered ignitor " + name)
 	}
-
-}
-
-func (o *Operator) registerIgnitorSchedule(ignitor *v1alpha1.Ignitor) error{
-	name := ignitor.ObjectMeta.Name
-	scheduleInterval, err := nextExecutionInterval(ignitor.Spec.Scheduled)
-	if err != nil {
-		return errors.New("Invalid schedule for ignitor " + name + ". It will be ignored.")			
-	} else {
-		sec := fmt.Sprintf("%v", scheduleInterval)
-		o.log.Trace.Println("Scheduled ignitor " + name + " in " + sec)
-		o.ququeIgnitorExecution(scheduleInterval, name)
-	}
-	return nil
-}
-
-func nextExecutionInterval(schedule string) (time.Duration, error){
-	// Immediate execution
-	if strings.ToUpper(schedule) == "NOW"{
-		return 0 * time.Second, nil
-	}
-
-	// Cronjob-like schedule
-	parsedCronExpression, err := cronexpr.Parse(schedule)
-	if err == nil {
-		now := time.Now()
-		return parsedCronExpression.Next(now).Sub(now), nil
-	}
-
-	return 0 * time.Second, errors.New("invalid schedule")
 }
 
 func (o *Operator) updatedIgnitorHandler(old, new interface{}) {
@@ -131,6 +100,26 @@ func (o *Operator) updatedIgnitorHandler(old, new interface{}) {
 	}
 
 	o.log.Trace.Println("Updating " + ignitorName)
+
+	if ok := o.flow.RemoveIgnitor(ignitorName); !ok {
+		o.log.Error.Println("can not remove ignitor " + ignitorName)
+	}
+
+	// TODO: change in RegisterTaskWithOptions
+	if updatedIgn, err := o.flow.RegisterIgnitor(ignitorName); err != nil {
+		o.log.Error.Println("can not register ignitor " + ignitorName)
+		o.log.Error.Println(err)
+		return
+	} else {
+		updatedIgn.SetGeneration(ignitor.ObjectMeta.Generation)
+
+		// Set the schedule for this ingitor
+		if err := o.registerIgnitorSchedule(ignitor); err != nil {
+			o.log.Error.Println(err)
+			return
+		}
+		o.log.Info.Println("Updated ignitor " + ignitorName)
+	}
 }
 
 func (o *Operator) deletedIgnitorHandler(old interface{}) {
@@ -152,7 +141,6 @@ func (o *Operator) deletedIgnitorHandler(old interface{}) {
 	}
 }
 
-
 func (o *Operator) getIgnitorByName(ignitorName string) (*v1alpha1.Ignitor, error) {
 	ignitorsInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Ignitors()
 	ignitor, err := ignitorsInformer.Lister().Ignitors("default").Get(ignitorName)
@@ -162,7 +150,7 @@ func (o *Operator) getIgnitorByName(ignitorName string) (*v1alpha1.Ignitor, erro
 	return ignitor, nil
 }
 
-func (o  *Operator) executeIgnitor(ignitorName string, done func()) error {
+func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 	// Be sure that the ignitor at this point is still present in the cluster
 	ignitor, err := o.getIgnitorByName(ignitorName)
 	if err != nil {
@@ -170,13 +158,13 @@ func (o  *Operator) executeIgnitor(ignitorName string, done func()) error {
 	}
 
 	// In case the ingitor scheduler was "NOW", it need to be removed from the cluster
-	if strings.ToUpper(ignitor.Spec.Scheduled) == "NOW"{
+	if strings.ToUpper(ignitor.Spec.Scheduled) == "NOW" {
 		o.ququeIgnitorDeletion(ignitorName)
 	} else {
 		// Otherwise reschedule
-		if err := o.registerIgnitorSchedule(ignitor); err != nil{
+		if err := o.registerIgnitorSchedule(ignitor); err != nil {
 			o.log.Error.Println(err)
-			o.log.Info.Println("Ignitor " + ignitorName + " can not be rescheduled")			
+			o.log.Info.Println("Ignitor " + ignitorName + " can not be rescheduled")
 		}
 	}
 
@@ -187,7 +175,7 @@ func (o  *Operator) executeIgnitor(ignitorName string, done func()) error {
 	if err != nil {
 		return err
 	}
-	for _, taskName := range flowIgnitor.GetTaskNamesToExecute(){
+	for _, taskName := range flowIgnitor.GetTaskNamesToExecute() {
 		// Be sure the task is still registered in the internal model
 		_, err := o.flow.GetTask(taskName)
 		if err != nil {
@@ -201,7 +189,7 @@ func (o  *Operator) executeIgnitor(ignitorName string, done func()) error {
 	return nil
 }
 
-func (o  *Operator) deleteIgnitor(ignitorName string, done func()) error {
+func (o *Operator) deleteIgnitor(ignitorName string, done func()) error {
 	// Be sure that the ignitor at this point is still present in the cluster
 	_, err := o.getIgnitorByName(ignitorName)
 	if err != nil {
@@ -211,7 +199,43 @@ func (o  *Operator) deleteIgnitor(ignitorName string, done func()) error {
 	if err := o.orcaClientSet.SiroccoV1alpha1().Ignitors("default").Delete(ignitorName, &metaV1.DeleteOptions{}); err != nil {
 		return err
 	}
-	
+
 	done()
 	return nil
-}	
+}
+
+func (o *Operator) registerIgnitorSchedule(ignitor *v1alpha1.Ignitor) error {
+	name := ignitor.ObjectMeta.Name
+	scheduleInterval, err := nextExecutionInterval(ignitor.Spec.Scheduled)
+	if err != nil {
+		return errors.New("Invalid schedule for ignitor " + name + ". It will be ignored.")
+	} else {
+		sec := fmt.Sprintf("%v", scheduleInterval)
+		o.log.Trace.Println("Scheduled ignitor " + name + " in " + sec)
+		o.ququeIgnitorExecution(scheduleInterval, name)
+	}
+	return nil
+}
+
+func nextExecutionInterval(schedule string) (time.Duration, error) {
+	// Immediate execution
+	if strings.ToUpper(schedule) == "NOW" {
+		return 0 * time.Second, nil
+	}
+
+	now := time.Now()
+
+	// Cronjob-like schedule
+	parsedCronExpression, err := cronexpr.Parse(schedule)
+	if err == nil {
+		return parsedCronExpression.Next(now).Sub(now), nil
+	}
+
+	// At-like schedule
+	s, err := time.Parse(time.RFC3339, schedule)
+	if err == nil && s.Sub(now) > 0 {
+		return s.Sub(now), nil
+	}
+
+	return 0 * time.Second, errors.New("invalid schedule")
+}

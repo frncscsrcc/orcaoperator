@@ -6,4 +6,4 @@ metadata:
   name: ignitor1
 spec:
   description: Initiate the workflow ABC
-  scheduled: "NOW"
+  scheduled: "2026-01-02T15:04:05Z"

@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-//	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/util/workqueue"
+	//	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/workqueue"
 	orcaV1alpha1 "orcaoperator/pkg/clients/clientset/versioned"
 	orcaInformers "orcaoperator/pkg/clients/informers/externalversions"
 	"orcaoperator/pkg/flow"
 	"time"
-		"k8s.io/client-go/tools/clientcmd"
-
 )
 
 type Operator struct {
@@ -28,6 +27,7 @@ type Operator struct {
 	initialized bool
 	done        chan struct{}
 	log         Log
+	config      Config
 }
 
 func New(appConfig Config) (*Operator, error) {
@@ -60,10 +60,11 @@ func New(appConfig Config) (*Operator, error) {
 	o.coreInformerFactory = coreInformerFactory
 	o.orcaClientSet = orcaClientSet
 	o.orcaInformerFactory = orcaInformerFactory
-	o.workqueue =  workqueue.NewDelayingQueue()
+	o.workqueue = workqueue.NewDelayingQueue()
 	o.flow = flow.New()
 	o.done = make(chan struct{})
 	o.log = NewLog(appConfig.DebugLevel)
+	o.config = appConfig
 
 	return o, nil
 }
@@ -103,6 +104,9 @@ func (o *Operator) Init() {
 	o.initialized = true
 
 	o.log.Info.Println("Orca is initialized")
+
+	// Initialize webserver (in a separate thread)
+	go o.initializeWebServer()
 }
 
 func (o *Operator) Run() {
@@ -124,7 +128,7 @@ func (o *Operator) Run() {
 
 		var ok bool
 		var qi queueItem
-		
+
 		// Cast the item to be a queueItem structure
 		qi, ok = generic.(queueItem)
 		if !ok {
@@ -135,7 +139,7 @@ func (o *Operator) Run() {
 		o.log.Trace.Println("Received queue item " + qi.operation + " for " + qi.item)
 
 		// Callback function to call when the queue item is processed
-		itemDone := func (){
+		itemDone := func() {
 			o.workqueue.Done(qi)
 		}
 
@@ -144,18 +148,15 @@ func (o *Operator) Run() {
 		case "EXECUTE_IGNITOR":
 			o.executeIgnitor(qi.item, itemDone)
 
-		case "EXECUTE_TASK": {
-			o.executeTask(qi.item, itemDone)
+		case "EXECUTE_TASK":
+			{
+				o.executeTask(qi.item, itemDone)
+			}
 
-			// go func(o *Operator){
-			// 	o.workqueue.Done(qi)
-			// }(o)
-		}
-		
-
-		case "DELETE_IGNITOR":{
-			o.deleteIgnitor(qi.item, itemDone)
-		}
+		case "DELETE_IGNITOR":
+			{
+				o.deleteIgnitor(qi.item, itemDone)
+			}
 		default:
 
 		}
