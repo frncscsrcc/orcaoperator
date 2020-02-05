@@ -20,6 +20,8 @@ type Operator struct {
 	orcaClientSet       *orcaV1alpha1.Clientset
 	orcaInformerFactory orcaInformers.SharedInformerFactory
 
+	podToObserve map[string]bool
+
 	workqueue workqueue.DelayingInterface
 
 	flow *flow.Flow
@@ -61,6 +63,7 @@ func New(appConfig Config) (*Operator, error) {
 	o.orcaClientSet = orcaClientSet
 	o.orcaInformerFactory = orcaInformerFactory
 	o.workqueue = workqueue.NewDelayingQueue()
+	o.podToObserve = make(map[string]bool)
 	o.flow = flow.New()
 	o.done = make(chan struct{})
 	o.log = NewLog(appConfig.DebugLevel)
@@ -70,6 +73,12 @@ func New(appConfig Config) (*Operator, error) {
 }
 
 func (o *Operator) Init() {
+	// Initialize the pod (running task) informers
+	podInformer := o.coreInformerFactory.Core().V1().Pods()
+	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: o.updatedPodHandler,
+	})
+
 	// Initialize the task informers
 	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
 	taskInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -87,6 +96,8 @@ func (o *Operator) Init() {
 	})
 
 	// Activate the informer and wait for the cache
+	o.coreInformerFactory.Start(o.done)
+	o.coreInformerFactory.WaitForCacheSync(o.done)
 	o.orcaInformerFactory.Start(o.done)
 	o.orcaInformerFactory.WaitForCacheSync(o.done)
 

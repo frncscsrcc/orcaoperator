@@ -159,7 +159,7 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 
 	// In case the ingitor scheduler was "NOW" or in the At-like format,
 	// it need to be removed from the cluster
-	if ! isCronJobSchedule(ignitor.Spec.Scheduled) {
+	if !isCronJobSchedule(ignitor.Spec.Scheduled) {
 		o.ququeIgnitorDeletion(ignitorName)
 	} else {
 		// Otherwise reschedule

@@ -9,9 +9,9 @@ metadata:
 spec:
   description: This task should return true after 10 sec.
   startOnIgnition:
-    - ignitor1
   startOnSuccess:
   startOnFailure:
+    - task1
   template:
     spec:
       containers:

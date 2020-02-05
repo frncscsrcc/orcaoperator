@@ -73,6 +73,11 @@ func (f *Flow) GetTask(name string) (*Task, error) {
 	return nil, errors.New("task " + name + " not found")
 }
 
+// GetName return the task name
+func (t *Task) GetName() string {
+	return t.name
+}
+
 // AddStartOnIgnition sets an ignitor for the task
 func (t *Task) AddStartOnIgnition(ignitorName string) {
 	t.flow.m.Lock()

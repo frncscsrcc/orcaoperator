@@ -2,11 +2,16 @@ package operator
 
 import (
 	"errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"math/rand"
+	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	"time"
 )
+
+var seededRand *rand.Rand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
 
 func (o *Operator) registerTasks() error {
 	// Initialize the flow (based on task and ignitors already present in the cluster)
@@ -67,13 +72,12 @@ func (o *Operator) updatedTaskHandler(old, new interface{}) {
 	}
 
 	o.log.Trace.Println("Updating " + taskName)
-	o.registerTask(task)	
+	o.registerTask(task)
 }
 
 func (o *Operator) registerTask(task *v1alpha1.Task) error {
 	// Remove task, in case it was present already (update)
 	o.flow.RemoveTask(task.ObjectMeta.Name)
-	
 
 	// TODO: change in RegisterTaskWithOptions
 	t, err := o.flow.RegisterTask(task.ObjectMeta.Name)
@@ -141,13 +145,21 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 		return err
 	}
 
+	if _, exists := o.podToObserve[taskName]; exists {
+		o.log.Trace.Println("Skipping task " + taskName + " (a pod is already present in the cluster)")
+		return nil
+	}
+
 	o.log.Info.Println("Executing task " + taskName + " (background)")
 	go done()
 
 	pod := o.getPodObject(task)
+
+	o.podToObserve[task.ObjectMeta.Name] = true
+
 	pod, err = o.coreClientSet.CoreV1().Pods("default").Create(pod)
 	if err != nil {
-		o.log.Error.Println("Can not create a pod for " + taskName + ". ")
+		o.log.Error.Println("Can not create a pod for " + taskName + ". Skip")
 		o.log.Error.Println(err)
 		return err
 	}
@@ -161,21 +173,34 @@ func (o *Operator) getPodObject(task *v1alpha1.Task) *core.Pod {
 
 	return &core.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      name + "-" + getRandomString(8),
 			Namespace: "default",
 			Labels: map[string]string{
 				"app": "demo",
 			},
+			Annotations: map[string]string{
+				"orcaTask": task.ObjectMeta.Name,
+			},
 		},
 		Spec: core.PodSpec{
+			RestartPolicy: "Never",
 			Containers: []core.Container{
 				{
 					Name:            template.Spec.Containers[0].Name,
 					Image:           template.Spec.Containers[0].Image,
 					ImagePullPolicy: core.PullIfNotPresent,
-					Command: template.Spec.Containers[0].Command,
+					Command:         template.Spec.Containers[0].Command,
 				},
 			},
 		},
 	}
+}
+
+func getRandomString(length int) string {
+	const charset = "abcdefghijklmnopqrstuvwxyz"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
 }

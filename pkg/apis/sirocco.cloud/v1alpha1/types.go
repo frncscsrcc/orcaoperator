@@ -1,8 +1,8 @@
 package v1alpha1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"orcaoperator/pkg/flow"
 )
 
@@ -41,8 +41,8 @@ type TaskSpec struct {
 	// +optional
 	StartOnSuccess []string `json:"startOnSuccess,omitempty"`
 	// +optional
-	StartOnFailure []string `json:"startOnFailure,omitempty"`
-	Template   corev1.PodTemplateSpec `json:"template"`
+	StartOnFailure []string               `json:"startOnFailure,omitempty"`
+	Template       corev1.PodTemplateSpec `json:"template"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
