@@ -142,11 +142,13 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 	task, err := o.getTaskByName(taskName)
 	if err != nil {
 		o.log.Error.Println("The task " + taskName + " is not registered. Skipping")
+		done()
 		return err
 	}
 
-	if _, exists := o.podToObserve[taskName]; exists {
-		o.log.Trace.Println("Skipping task " + taskName + " (a pod is already present in the cluster)")
+	if podRunning, exists := o.podToObserve[taskName]; exists && podRunning {
+		o.log.Warning.Println("Skipping task " + taskName + " (a pod is already running in the cluster)")
+		done()
 		return nil
 	}
 
@@ -161,6 +163,7 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 	if err != nil {
 		o.log.Error.Println("Can not create a pod for " + taskName + ". Skip")
 		o.log.Error.Println(err)
+		done()
 		return err
 	}
 

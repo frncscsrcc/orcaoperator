@@ -36,3 +36,11 @@ func (o *Operator) ququeIgnitorDeletion(ignitorName string) {
 	}
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
+
+func (o *Operator) ququePodDeletion(podName string) {
+	qi := queueItem{
+		operation: "DELETE_POD",
+		item:      podName,
+	}
+	o.workqueue.AddAfter(qi, time.Duration(0))
+}

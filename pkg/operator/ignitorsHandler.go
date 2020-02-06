@@ -182,6 +182,7 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 		// Be sure the task is still registered in the internal model
 		_, err := o.flow.GetTask(taskName)
 		if err != nil {
+			o.log.Error.Println(err)
 			continue
 		}
 		// Add the task in the execution queue

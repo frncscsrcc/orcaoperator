@@ -106,6 +106,11 @@ func (o *Operator) Init() {
 		o.log.Error.Println("Problem in task initialization. Skip it.")
 	}
 
+	// Register the pods (from task) already present and running in the cluster
+	if err := o.registerPods(); err != nil {
+		o.log.Error.Println("Problem in pod initialization. Skip it.")
+	}
+
 	// Register the ingitors already present in the cluster
 	if err := o.registerIgnitors(); err != nil {
 		o.log.Error.Println("Problem in ingitor initialization. Skip it.")
@@ -165,9 +170,11 @@ func (o *Operator) Run() {
 			}
 
 		case "DELETE_IGNITOR":
-			{
-				o.deleteIgnitor(qi.item, itemDone)
-			}
+			o.deleteIgnitor(qi.item, itemDone)
+
+		case "DELETE_POD":
+			o.deletePod(qi.item, itemDone)
+
 		default:
 
 		}

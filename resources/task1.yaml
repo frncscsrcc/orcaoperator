@@ -17,5 +17,5 @@ spec:
       containers:
       - name: pi
         image: perl
-        command: ["false"]
+        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2)"]
       restartPolicy: Never
