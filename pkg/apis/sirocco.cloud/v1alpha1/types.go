@@ -41,8 +41,13 @@ type TaskSpec struct {
 	// +optional
 	StartOnSuccess []string `json:"startOnSuccess,omitempty"`
 	// +optional
-	StartOnFailure []string               `json:"startOnFailure,omitempty"`
-	Template       corev1.PodTemplateSpec `json:"template"`
+	StartOnFailure []string `json:"startOnFailure,omitempty"`
+	// +optional
+	SuccessActions []string `json:"successActions,omitempty"`
+	// +optional
+	FailureActions []string `json:"failureActions,omitempty"`
+
+	Template corev1.PodTemplateSpec `json:"template"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

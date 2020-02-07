@@ -1,6 +1,8 @@
 package flow
 
-import "errors"
+import (
+	"errors"
+)
 
 // TaskOptions allows to register a new task passing options (such as actions)
 type TaskOptions struct {
@@ -127,6 +129,32 @@ func (t *Task) IsUpdated(generation int64) bool {
 	t.flow.m.Lock()
 	defer t.flow.m.Unlock()
 	return generation > t.generation
+}
+
+// RegisterSuccessActions register a success action, using plugins
+func (t *Task) RegisterSuccessAction(actionName string) error {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+
+	if action, err := getActionFromName(actionName); err == nil {
+		t.successActions = append(t.successActions, action)
+		return nil
+	} else {
+		return err
+	}
+}
+
+// RegisterSuccessActions register a success action, using plugins
+func (t *Task) RegisterFailureAction(actionName string) error {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+
+	if action, err := getActionFromName(actionName); err == nil {
+		t.failureActions = append(t.successActions, action)
+		return nil
+	} else {
+		return err
+	}
 }
 
 func (f *Flow) removeTaskFromOnIgnition(name string) bool {

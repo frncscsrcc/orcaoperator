@@ -12,10 +12,13 @@ spec:
     - ignitor1
   startOnSuccess:
   startOnFailure:
+  successActions:
+  failureActions:
+    - SIROCCO-DEMO-ALERT-FAILURE
   template:
     spec:
       containers:
       - name: pi
         image: perl
-        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2)"]
+        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2); exit(1)"]
       restartPolicy: Never

@@ -1,6 +1,11 @@
 package flow
 
-import "fmt"
+import (
+	"bytes"
+	"errors"
+	"net/http"
+	"strings"
+)
 
 // ---
 
@@ -10,34 +15,36 @@ type Action interface {
 
 // --
 
-type slackAlert struct {
-	APIKey string
+type siroccoDemoAlert struct {
+	message string
 }
 
-func (a slackAlert) Run(taskInfo TaskInfo) error {
-	Show("------------------ This is a slack notification ------------------")
-	Show("Sending alert to Slack!\n")
-	Show(a.APIKey)
-	Show(taskInfo.ToJSON())
-	Show("------------------------------------------------------------------\n")
+func (a siroccoDemoAlert) Run(taskInfo TaskInfo) error {
+	url := "http://echobot.sirocco.cloud/addMessage"
+
+	message := a.message
+	if message == "" {
+		message = "GENERIC ALERT"
+	}
+
+	var jsonStr = []byte(`{"id":"` + taskInfo.Name + `", "message":"` + message + `"}`)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 	return nil
 }
 
-func GetSlackAlertAction(APIKey string) (Action, error) {
-	return slackAlert{APIKey: APIKey}, nil
-}
-
-// --
-
-type sirenAlert string
-
-func (a sirenAlert) Run(taskInfo TaskInfo) error {
-	Show("------------------ This is an alarm notification ------------------")
-	fmt.Printf("<<< %v %v >>>\n", a, taskInfo.Name)
-	Show("-------------------------------------------------------------------\n")
-	return nil
-}
-
-func GetSirenAlertAction() (Action, error) {
-	return sirenAlert("UEUEUEUEUEU"), nil
+func getActionFromName(action string) (Action, error) {
+	if strings.ToUpper(action) == "SIROCCO-DEMO-ALERT-SUCCESS" {
+		return siroccoDemoAlert{message: "SUCCESS"}, nil
+	}
+	if strings.ToUpper(action) == "SIROCCO-DEMO-ALERT-FAILURE" {
+		return siroccoDemoAlert{message: "FAILURE"}, nil
+	}
+	return nil, errors.New("action " + action + " not recognized")
 }

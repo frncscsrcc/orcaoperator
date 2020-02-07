@@ -196,6 +196,16 @@ func (in *TaskSpec) DeepCopyInto(out *TaskSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.SuccessActions != nil {
+		in, out := &in.SuccessActions, &out.SuccessActions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.FailureActions != nil {
+		in, out := &in.FailureActions, &out.FailureActions
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.Template.DeepCopyInto(&out.Template)
 	return
 }

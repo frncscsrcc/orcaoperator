@@ -90,6 +90,20 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 		t.SetGeneration(task.ObjectMeta.Generation)
 	}
 
+	// Register the action to be executed in case of success
+	for _, actionName := range task.Spec.SuccessActions {
+		if err := t.RegisterSuccessAction(actionName); err == nil {
+			o.log.Info.Println("Registered success action " + actionName + " for task " + task.ObjectMeta.Name)
+		}
+	}
+
+	// Register the action to be executed in case of success
+	for _, actionName := range task.Spec.FailureActions {
+		if err := t.RegisterFailureAction(actionName); err == nil {
+			o.log.Info.Println("Registered failure action " + actionName + " for task " + task.ObjectMeta.Name)
+		}
+	}
+
 	// Register the ignitors
 	for _, ignitorName := range task.Spec.StartOnIgnition {
 		t.AddStartOnIgnition(ignitorName)
