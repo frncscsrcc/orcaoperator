@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"math/rand"
 	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
+	"k8s.io/client-go/util/retry"
 	"time"
 )
 
@@ -79,6 +80,11 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 	// Remove task, in case it was present already (update)
 	o.flow.RemoveTask(task.ObjectMeta.Name)
 
+	// Set the state to pending (TODO we should check is not runnng)
+	if(task.Status.State == ""){
+		o.ququeTaskStatePending(task.ObjectMeta.Name)
+	}
+
 	// TODO: change in RegisterTaskWithOptions
 	t, err := o.flow.RegisterTask(task.ObjectMeta.Name)
 	if err != nil {
@@ -142,15 +148,6 @@ func (o *Operator) deletedTaskHandler(old interface{}) {
 	}
 }
 
-func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
-	tasksInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
-	task, err := tasksInformer.Lister().Tasks("default").Get(taskName)
-	if err != nil {
-		return nil, errors.New("task " + taskName + " is not regitered in the cluster")
-	}
-	return task, nil
-}
-
 func (o *Operator) executeTask(taskName string, done func()) error {
 	// Be sure that the task at this point is still present in the cluster
 	task, err := o.getTaskByName(taskName)
@@ -165,6 +162,8 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 		done()
 		return nil
 	}
+
+	o.ququeTaskStateRunning(task.ObjectMeta.Name)
 
 	o.log.Info.Println("Executing task " + taskName + " (background)")
 	go done()
@@ -182,6 +181,76 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 	}
 
 	return nil
+}
+
+func (o *Operator) changeTaskState(taskName string, newState string, done func()) error {
+	// We do not need to wait. Release the working queue
+	done()
+
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Retrieve the latest version of Task before attempting update
+		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
+		task, err := o.getTaskByName(taskName)
+		if err != nil {
+			return err
+		}
+
+		task.Status.State = newState;
+
+		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks("default").Update(task)
+		return updateErr
+	});
+
+	if retryErr != nil {
+		return retryErr;
+	}
+
+	o.log.Info.Println("Changed state of deployment " + taskName + " in " + newState)
+
+	return nil;
+}
+
+func (o *Operator) changeCompletedTimeState(taskName string, success bool, done func()) error {
+	// We do not need to wait. Release the working queue
+	done()
+	
+	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Retrieve the latest version of Task before attempting update
+		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
+		task, err := o.getTaskByName(taskName)
+		if err != nil {
+			return err
+		}
+
+		nowString := time.Now().Format("2006-01-02 15:04:05");
+		if success {
+			task.Status.LastSuccess = nowString
+			task.Status.FailuresCount = 0
+		} else {
+			task.Status.LastFailure = nowString
+			task.Status.FailuresCount = task.Status.FailuresCount + 1
+		}
+
+		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks("default").Update(task)
+		return updateErr
+	});
+
+	if retryErr != nil {
+		return retryErr;
+	}
+
+	o.log.Trace.Println("Changed last complete time for " + taskName )
+
+	return nil;
+}
+
+func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
+	tasksInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
+	task, err := tasksInformer.Lister().Tasks("default").Get(taskName)
+	if err != nil {
+		return nil, errors.New("task " + taskName + " is not regitered in the cluster")
+	}
+	return task, nil
 }
 
 func (o *Operator) getPodObject(task *v1alpha1.Task) *core.Pod {

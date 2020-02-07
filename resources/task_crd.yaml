@@ -27,6 +27,10 @@ spec:
       type: string
       description: Last failure datetime
       JSONPath: .status.lastFailure
+    - name: failuresCount
+      type: integer
+      description: Count of last consecutive failures
+      JSONPath: .status.failuresCount      
     - name: ignitors
       type: string
       description: Triggered by ignitors

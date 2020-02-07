@@ -10,8 +10,8 @@ spec:
   description: This task should return true after 10 sec.
   startOnIgnition:
   startOnSuccess:
-  startOnFailure:
     - task1
+  startOnFailure:
   template:
     spec:
       containers:

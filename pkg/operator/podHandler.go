@@ -88,13 +88,23 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		return
 	}
 
+	// The task is finished! Mark it as pending
+	o.ququeTaskStatePending(taskName)
+
 	// Stop to observer this pod
 	o.podToObserve[taskName] = false
 
 	// Handle success
 	if terminated.ExitCode == 0 {
 		o.log.Info.Printf("Task %s (%s) terminated with SUCCESS\n", taskName, podName)
+		
+		// Request the deletion of the pod
 		o.ququePodDeletion(podName)
+
+		// Save last success time
+		o.ququeTaskMarkSuccess(taskName)
+
+		// Start all the new tasks that depend on the success of this one
 		runTasksOnSuccess := o.flow.TriggerSuccess(taskName)
 		for _, task := range runTasksOnSuccess {
 			name := task.GetName()
@@ -106,7 +116,14 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 	// Handle success
 	if terminated.ExitCode == 1 {
 		o.log.Error.Printf("Task %s (%s) terminated with FAILURE\n", taskName, podName)
+
+		// Request the deletion of the pod
 		o.ququePodDeletion(podName)
+
+		// Save last failure time
+		o.ququeTaskMarkFailure(taskName)
+
+		// Start all the new tasks that depend on the failure of this one
 		runTasksOnFailure := o.flow.TriggerFailure(taskName)
 		for _, task := range runTasksOnFailure {
 			name := task.GetName()

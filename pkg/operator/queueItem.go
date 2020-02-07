@@ -44,3 +44,35 @@ func (o *Operator) ququePodDeletion(podName string) {
 	}
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
+
+func (o *Operator) ququeTaskStatePending(taskName string) {
+	qi := queueItem{
+		operation: "SET_TASK_PENDING",
+		item:      taskName,
+	}
+	o.workqueue.AddAfter(qi, time.Duration(0))
+}
+
+func (o *Operator) ququeTaskStateRunning(taskName string) {
+	qi := queueItem{
+		operation: "SET_TASK_RUNNING",
+		item:      taskName,
+	}
+	o.workqueue.AddAfter(qi, time.Duration(0))
+}
+
+func (o *Operator) ququeTaskMarkSuccess(taskName string) {
+	qi := queueItem{
+		operation: "SET_TASK_SUCCESS_TIME",
+		item:      taskName,
+	}
+	o.workqueue.AddAfter(qi, time.Duration(0))
+}
+
+func (o *Operator) ququeTaskMarkFailure(taskName string) {
+	qi := queueItem{
+		operation: "SET_TASK_FAILURE_TIME",
+		item:      taskName,
+	}
+	o.workqueue.AddAfter(qi, time.Duration(0))
+}

@@ -165,9 +165,19 @@ func (o *Operator) Run() {
 			o.executeIgnitor(qi.item, itemDone)
 
 		case "EXECUTE_TASK":
-			{
 				o.executeTask(qi.item, itemDone)
-			}
+
+		case "SET_TASK_PENDING":
+				o.changeTaskState(qi.item, "Pending", itemDone)
+
+		case "SET_TASK_RUNNING":
+				o.changeTaskState(qi.item, "Running", itemDone)
+
+		case "SET_TASK_SUCCESS_TIME":
+			o.changeCompletedTimeState(qi.item, true /*success*/, itemDone)
+
+		case "SET_TASK_FAILURE_TIME":
+			o.changeCompletedTimeState(qi.item, false /*failure*/, itemDone)
 
 		case "DELETE_IGNITOR":
 			o.deleteIgnitor(qi.item, itemDone)
