@@ -3,7 +3,7 @@ ORCA: In cluster orchestrator.
 
 Motivations
 ---
-This project is the result of (several) coding hours. The main reasons I decided to begin this project were the fact that I would like to improve my knowledge on Go and the fact I really want to go deep in the kubernetes source code. I considered the development of operators the best way to dig inside these two big topics.
+This project is the result of (several) coding hours. The real reasons why I decided to dedicate all this time to a side project like this, were the fact that I would like to improve my skills in Go and the fact I would like to understand the internals of kubernetes, being able to understand the source code. I considered the development of kube-operators the best way to dig inside these two big topics.
 
 Disclaimer
 ---
