@@ -64,8 +64,9 @@ func (f *Flow) TriggerSuccess(taskName string) []*Task {
 
 	// If task exists, trigger the onSuccessActions
 	if t, err := f.GetTask(taskName); err == nil {
+		taskInfo := map[string]string{"Name": taskName}
 		for _, action := range t.successActions {
-			action.Run(t.GetTaskInfo())
+			action.Run(taskInfo)
 		}
 	}
 
@@ -94,8 +95,9 @@ func (f *Flow) TriggerFailure(taskName string) []*Task {
 
 	// If task exists, trigger the onSuccessActions
 	if t, err := f.GetTask(taskName); err == nil {
+		taskInfo := map[string]string{"Name": taskName}
 		for _, action := range t.failureActions {
-			action.Run(t.GetTaskInfo())
+			action.Run(taskInfo)
 		}
 	}
 

@@ -92,14 +92,14 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 
 	// Register the action to be executed in case of success
 	for _, actionName := range task.Spec.SuccessActions {
-		if err := t.RegisterSuccessAction(actionName); err == nil {
+		if err := t.AddActionOnSuccess(actionName); err == nil {
 			o.log.Info.Println("Registered success action " + actionName + " for task " + task.ObjectMeta.Name)
 		}
 	}
 
 	// Register the action to be executed in case of success
 	for _, actionName := range task.Spec.FailureActions {
-		if err := t.RegisterFailureAction(actionName); err == nil {
+		if err := t.AddActionOnFailure(actionName); err == nil {
 			o.log.Info.Println("Registered failure action " + actionName + " for task " + task.ObjectMeta.Name)
 		}
 	}

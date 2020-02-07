@@ -2,13 +2,8 @@ package flow
 
 import (
 	"errors"
+	"orcaoperator/pkg/actions"
 )
-
-// TaskOptions allows to register a new task passing options (such as actions)
-type TaskOptions struct {
-	SuccessActions []Action
-	FailureActions []Action
-}
 
 // Task reppresents a specific step in the workflow
 type Task struct {
@@ -16,8 +11,8 @@ type Task struct {
 	name       string
 	generation int64
 
-	successActions []Action
-	failureActions []Action
+	successActions []actions.Action
+	failureActions []actions.Action
 }
 
 // RegisterTask registers a new task in the workflow, setting only the name
@@ -35,18 +30,6 @@ func (f *Flow) RegisterTask(name string) (*Task, error) {
 	}
 
 	f.tasks[name] = t
-	return t, nil
-}
-
-// RegisterTaskWithOptions registers a new task in the workflow, setting the
-// name and other options.
-func (f *Flow) RegisterTaskWithOptions(name string, options TaskOptions) (*Task, error) {
-	t, err := f.RegisterTask(name)
-	if err != nil {
-		return nil, err
-	}
-	t.successActions = options.SuccessActions
-	t.failureActions = options.FailureActions
 	return t, nil
 }
 
@@ -117,6 +100,32 @@ func (t *Task) AddStartOnFailure(taskName string) {
 	t.flow.failureToTasks[taskName][t.name] = true
 }
 
+// AddActionOnSuccess register a success action, using plugins
+func (t *Task) AddActionOnSuccess(actionName string) error {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+
+	if action, err := actions.GetActionFromName(actionName); err == nil {
+		t.successActions = append(t.successActions, action)
+		return nil
+	} else {
+		return err
+	}
+}
+
+// AddActionOnFailure register a success action, using plugins
+func (t *Task) AddActionOnFailure(actionName string) error {
+	t.flow.m.Lock()
+	defer t.flow.m.Unlock()
+
+	if action, err := actions.GetActionFromName(actionName); err == nil {
+		t.failureActions = append(t.successActions, action)
+		return nil
+	} else {
+		return err
+	}
+}
+
 // SetGeneration updates the task generation (version)
 func (t *Task) SetGeneration(generation int64) {
 	t.flow.m.Lock()
@@ -129,32 +138,6 @@ func (t *Task) IsUpdated(generation int64) bool {
 	t.flow.m.Lock()
 	defer t.flow.m.Unlock()
 	return generation > t.generation
-}
-
-// RegisterSuccessActions register a success action, using plugins
-func (t *Task) RegisterSuccessAction(actionName string) error {
-	t.flow.m.Lock()
-	defer t.flow.m.Unlock()
-
-	if action, err := getActionFromName(actionName); err == nil {
-		t.successActions = append(t.successActions, action)
-		return nil
-	} else {
-		return err
-	}
-}
-
-// RegisterSuccessActions register a success action, using plugins
-func (t *Task) RegisterFailureAction(actionName string) error {
-	t.flow.m.Lock()
-	defer t.flow.m.Unlock()
-
-	if action, err := getActionFromName(actionName); err == nil {
-		t.failureActions = append(t.successActions, action)
-		return nil
-	} else {
-		return err
-	}
 }
 
 func (f *Flow) removeTaskFromOnIgnition(name string) bool {
