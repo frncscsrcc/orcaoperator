@@ -17,7 +17,7 @@ var seededRand *rand.Rand = rand.New(
 func (o *Operator) registerTasks() error {
 	// Initialize the flow (based on task and ignitors already present in the cluster)
 	taskInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
-	tasks, err := taskInformer.Lister().Tasks("default").List(labels.Everything())
+	tasks, err := taskInformer.Lister().Tasks(o.namespace).List(labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 
 	// Set the state to pending (TODO we should check is not runnng)
 	if(task.Status.State == ""){
-		o.ququeTaskStatePending(task.ObjectMeta.Name)
+		o.queueTaskStatePending(task.ObjectMeta.Name)
 	}
 
 	// TODO: change in RegisterTaskWithOptions
@@ -163,7 +163,7 @@ func (o *Operator) executeTask(taskName string, initiator string, message string
 		return nil
 	}
 
-	o.ququeTaskStateRunning(task.ObjectMeta.Name)
+	o.queueTaskStateRunning(task.ObjectMeta.Name)
 
 	o.log.Info.Println("Executing task " + taskName + " (background)")
 	go done()
@@ -172,7 +172,7 @@ func (o *Operator) executeTask(taskName string, initiator string, message string
 
 	o.podToObserve[task.ObjectMeta.Name] = true
 
-	pod, err = o.coreClientSet.CoreV1().Pods("default").Create(pod)
+	pod, err = o.coreClientSet.CoreV1().Pods(o.namespace).Create(pod)
 	if err != nil {
 		o.log.Error.Println("Can not create a pod for " + taskName + ". Skip")
 		o.log.Error.Println(err)
@@ -197,7 +197,7 @@ func (o *Operator) changeTaskState(taskName string, newState string, done func()
 
 		task.Status.State = newState;
 
-		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks("default").Update(task)
+		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks(o.namespace).Update(task)
 		return updateErr
 	});
 
@@ -231,7 +231,7 @@ func (o *Operator) changeCompletedTimeState(taskName string, success bool, done 
 			task.Status.FailuresCount = task.Status.FailuresCount + 1
 		}
 
-		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks("default").Update(task)
+		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks(o.namespace).Update(task)
 		return updateErr
 	});
 
@@ -246,7 +246,7 @@ func (o *Operator) changeCompletedTimeState(taskName string, success bool, done 
 
 func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
 	tasksInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Tasks()
-	task, err := tasksInformer.Lister().Tasks("default").Get(taskName)
+	task, err := tasksInformer.Lister().Tasks(o.namespace).Get(taskName)
 	if err != nil {
 		return nil, errors.New("task " + taskName + " is not regitered in the cluster")
 	}
@@ -260,7 +260,7 @@ func (o *Operator) getPodObject(task *v1alpha1.Task, initiator string, message s
 	return &core.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + getRandomString(8),
-			Namespace: "default",
+			Namespace: o.namespace,
 			Labels: map[string]string{
 				"app": "demo",
 			},

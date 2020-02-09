@@ -5,6 +5,7 @@ kind: Ignitor
 metadata:
   name: ignitor1
 spec:
+  data: this string is sent to the initiated tasks
   description: Initiate the workflow ABC
   #scheduled: "2020-02-03T19:34:05Z"
   scheduled: "NOW"

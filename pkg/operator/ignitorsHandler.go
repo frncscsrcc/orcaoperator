@@ -14,7 +14,7 @@ import (
 func (o *Operator) registerIgnitors() error {
 	// Initialize the initial flow (based on task and ignitors already present in the cluster)
 	ignitorsInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Ignitors()
-	ignitors, err := ignitorsInformer.Lister().Ignitors("default").List(labels.Everything())
+	ignitors, err := ignitorsInformer.Lister().Ignitors(o.namespace).List(labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (o *Operator) deletedIgnitorHandler(old interface{}) {
 
 func (o *Operator) getIgnitorByName(ignitorName string) (*v1alpha1.Ignitor, error) {
 	ignitorsInformer := o.orcaInformerFactory.Sirocco().V1alpha1().Ignitors()
-	ignitor, err := ignitorsInformer.Lister().Ignitors("default").Get(ignitorName)
+	ignitor, err := ignitorsInformer.Lister().Ignitors(o.namespace).Get(ignitorName)
 	if err != nil {
 		return nil, errors.New("ignitor " + ignitorName + " is not regitered in the cluster")
 	}
@@ -160,7 +160,7 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 	// In case the ingitor scheduler was "NOW" or in the At-like format,
 	// it need to be removed from the cluster
 	if !isCronJobSchedule(ignitor.Spec.Scheduled) {
-		o.ququeIgnitorDeletion(ignitorName)
+		o.queueIgnitorDeletion(ignitorName)
 	} else {
 		// Otherwise reschedule
 		if err := o.registerIgnitorSchedule(ignitor); err != nil {
@@ -185,9 +185,9 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 			o.log.Error.Println(err)
 			continue
 		}
-		// Add the task in the execution queue (no message is sent to the new task)
+		// Add the task in the execution queue (if present, some data is sent to the task)
 		taskCount++
-		o.ququeTaskExecution(taskName, ignitorName, "")
+		o.queueTaskExecution(taskName, ignitorName, ignitor.Spec.Data)
 	}
 
 	if taskCount == 0 {
@@ -205,7 +205,7 @@ func (o *Operator) deleteIgnitor(ignitorName string, done func()) error {
 		return err
 	}
 
-	if err := o.orcaClientSet.SiroccoV1alpha1().Ignitors("default").Delete(ignitorName, &metaV1.DeleteOptions{}); err != nil {
+	if err := o.orcaClientSet.SiroccoV1alpha1().Ignitors(o.namespace).Delete(ignitorName, &metaV1.DeleteOptions{}); err != nil {
 		return err
 	}
 
@@ -221,7 +221,7 @@ func (o *Operator) registerIgnitorSchedule(ignitor *v1alpha1.Ignitor) error {
 	} else {
 		sec := fmt.Sprintf("%v", scheduleInterval)
 		o.log.Trace.Println("Scheduled ignitor " + name + " in " + sec)
-		o.ququeIgnitorExecution(scheduleInterval, name)
+		o.queueIgnitorExecution(scheduleInterval, name)
 	}
 	return nil
 }

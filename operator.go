@@ -14,6 +14,7 @@ func main() {
 	deleteSuccessPodDelay := flag.Int("deleteSuccessPodDelay", 60, "Delete POD delay on success (sec)")
 	deleteFailedPodDelay := flag.Int("deleteFailedPodDelay", 300, "Delete POD delay on failure (sec)")
 	keepPods := flag.Bool("keepPods", false, "Do not delete pods after termination")
+	namespace := flag.String("namespace", "default", "Kubernetes namespace")
 
 	flag.Parse()
 
@@ -23,6 +24,7 @@ func main() {
 	config.DeleteSuccessPodDelay = *deleteSuccessPodDelay
 	config.DeleteFailedPodDelay = *deleteFailedPodDelay
 	config.KeepPods = *keepPods
+	config.Namespace = *namespace
 
 	operator, err := operator.New(config)
 	if err != nil {

@@ -20,5 +20,5 @@ spec:
       containers:
       - name: pi
         image: perl
-        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2); open(F, '>/dev/termination-log'); print F 'DATA'; close F;"]
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print $ENV{ORCA_DATA}; sleep(2); open(F, '>/dev/termination-log'); print F 'DATA'; close F;"]
       restartPolicy: Never

@@ -104,6 +104,16 @@ spec:
 
 ```
 
+Comunication beteen task
+---
+
+Communication between tasks
+
+Sometimes a task needs data from the one initiated it. In Orca this is very simple. Immagine you have two tasks: task1 and task2. The only thing you need to do in task1 is to save the output you want to send to task2 in a file inside a standard Kubernetes location (/dev/termination-log, see http://bit.ly/2vdAFvP). Orca will take care to retrive the content of this file - that is exposed by kubernetes itself, and “inject” inside a special environment variable in the pod initiated by task2. Isn’t it simple?
+
+Orca prefills two special environments: “**ORCA_INITIATOR**” contains the name of the initiator task (or the name of the ignitor), while “**ORCA_DATA**” contains the message string from the previous task (or the content of the field “data” n the ignitor configuration).
+
+
 Kubectl integrations
 ---
 

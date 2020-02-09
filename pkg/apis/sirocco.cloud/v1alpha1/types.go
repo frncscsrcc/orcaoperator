@@ -89,6 +89,8 @@ type IgnitorStatus struct {
 
 type IgnitorSpec struct {
 	// +optional
+	Data string `json:"data,omitempty"`
+
 	Scheduled string `json:"scheduled,omitempty"`
 }
 

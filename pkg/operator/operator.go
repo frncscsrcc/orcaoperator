@@ -15,6 +15,7 @@ import (
 )
 
 type Operator struct {
+	namespace string
 	coreClientSet       *kubernetes.Clientset
 	coreInformerFactory informers.SharedInformerFactory
 	orcaClientSet       *orcaV1alpha1.Clientset
@@ -58,6 +59,7 @@ func New(appConfig Config) (*Operator, error) {
 	// Initialize a shared informer factory for the orca objects (tasks and ignitors)
 	orcaInformerFactory := orcaInformers.NewSharedInformerFactory(orcaClientSet, time.Second*30)
 
+	o.namespace = appConfig.Namespace
 	o.coreClientSet = coreClientSet
 	o.coreInformerFactory = coreInformerFactory
 	o.orcaClientSet = orcaClientSet

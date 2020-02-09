@@ -11,7 +11,7 @@ func (o *Operator) registerPods() error {
 	// Initialize the flow (based on task and ignitors already present in the cluster)
 	podInformer := o.coreInformerFactory.Core().V1().Pods()
 	// TODO: filter based on orcaTask annotation
-	pods, err := podInformer.Lister().Pods("default").List(labels.Everything())
+	pods, err := podInformer.Lister().Pods(o.namespace).List(labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (o *Operator) registerPods() error {
 		if pod.Status.ContainerStatuses[0].State.Terminated != nil {
 			if !o.config.KeepPods{
 				// Cleaning: delete terminated pod from the cluster
-				o.ququePodDeletion(pod.ObjectMeta.Name, 0)
+				o.queuePodDeletion(pod.ObjectMeta.Name, 0)
 			}
 			continue
 		}
@@ -94,7 +94,7 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 	message := terminated.Message
 
 	// The task is finished! Mark it as pending
-	o.ququeTaskStatePending(taskName)
+	o.queueTaskStatePending(taskName)
 
 	// Stop to observer this pod
 	o.podToObserve[taskName] = false
@@ -105,18 +105,18 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		
 		// Request the deletion of the pod
 		if !o.config.KeepPods{
-			o.ququePodDeletion(podName, o.config.DeleteSuccessPodDelay)
+			o.queuePodDeletion(podName, o.config.DeleteSuccessPodDelay)
 		}
 
 		// Save last success time
-		o.ququeTaskMarkSuccess(taskName)
+		o.queueTaskMarkSuccess(taskName)
 
 		// Start all the new tasks that depend on the success of this one
 		runTasksOnSuccess := o.flow.TriggerSuccess(taskName)
 		for _, task := range runTasksOnSuccess {
 			name := task.GetName()
 			o.log.Info.Printf("Triggering task %s\n", name)
-			o.ququeTaskExecution(name, taskName, message)
+			o.queueTaskExecution(name, taskName, message)
 		}
 	}
 
@@ -126,18 +126,18 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 
 		// Request the deletion of the pod
 		if !o.config.KeepPods {
-			o.ququePodDeletion(podName, o.config.DeleteFailedPodDelay)
+			o.queuePodDeletion(podName, o.config.DeleteFailedPodDelay)
 		}
 
 		// Save last failure time
-		o.ququeTaskMarkFailure(taskName)
+		o.queueTaskMarkFailure(taskName)
 
 		// Start all the new tasks that depend on the failure of this one
 		runTasksOnFailure := o.flow.TriggerFailure(taskName)
 		for _, task := range runTasksOnFailure {
 			name := task.GetName()
 			o.log.Info.Printf("Triggering task %s\n", name)
-			o.ququeTaskExecution(name, taskName, message)
+			o.queueTaskExecution(name, taskName, message)
 		}
 	}
 }
@@ -149,7 +149,7 @@ func (o *Operator) deletePod(podName string, done func()) error {
 		return err
 	}
 
-	if err := o.coreClientSet.CoreV1().Pods("default").Delete(podName, &metaV1.DeleteOptions{}); err != nil {
+	if err := o.coreClientSet.CoreV1().Pods(o.namespace).Delete(podName, &metaV1.DeleteOptions{}); err != nil {
 		return err
 	}
 
@@ -161,7 +161,7 @@ func (o *Operator) deletePod(podName string, done func()) error {
 
 func (o *Operator) getPodByName(podName string) (*core.Pod, error) {
 	podInformer := o.coreInformerFactory.Core().V1().Pods()
-	pod, err := podInformer.Lister().Pods("default").Get(podName)
+	pod, err := podInformer.Lister().Pods(o.namespace).Get(podName)
 	if err != nil {
 		return nil, errors.New("pod " + podName + " is not regitered in the cluster")
 	}

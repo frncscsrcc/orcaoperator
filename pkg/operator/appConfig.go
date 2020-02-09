@@ -7,6 +7,7 @@ type Config struct {
 	DeleteSuccessPodDelay int
 	DeleteFailedPodDelay int
 	KeepPods bool
+	Namespace string
 }
 
 func GetDefaultConfig() Config {
@@ -17,5 +18,6 @@ func GetDefaultConfig() Config {
 		DeleteSuccessPodDelay: 60,
 		DeleteFailedPodDelay: 300,
 		KeepPods: false,
+		Namespace: "default",
 	}
 }
