@@ -165,7 +165,7 @@ func (o *Operator) Run() {
 			o.executeIgnitor(qi.item, itemDone)
 
 		case "EXECUTE_TASK":
-				o.executeTask(qi.item, itemDone)
+				o.executeTask(qi.item, qi.initiator, qi.message, itemDone)
 
 		case "SET_TASK_PENDING":
 				o.changeTaskState(qi.item, "Pending", itemDone)

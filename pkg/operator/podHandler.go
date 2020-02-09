@@ -31,8 +31,10 @@ func (o *Operator) registerPods() error {
 		}
 		// Check if the pod is terminated
 		if pod.Status.ContainerStatuses[0].State.Terminated != nil {
-			// Cleaning: delete terminated pod from the cluster
-			o.ququePodDeletion(pod.ObjectMeta.Name)
+			if !o.config.KeepPods{
+				// Cleaning: delete terminated pod from the cluster
+				o.ququePodDeletion(pod.ObjectMeta.Name, 0)
+			}
 			continue
 		}
 
@@ -88,6 +90,9 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		return
 	}
 
+	// Retrive any termination message (e.g.: data to send to the next task)
+	message := terminated.Message
+
 	// The task is finished! Mark it as pending
 	o.ququeTaskStatePending(taskName)
 
@@ -99,7 +104,9 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		o.log.Info.Printf("Task %s (%s) terminated with SUCCESS\n", taskName, podName)
 		
 		// Request the deletion of the pod
-		o.ququePodDeletion(podName)
+		if !o.config.KeepPods{
+			o.ququePodDeletion(podName, o.config.DeleteSuccessPodDelay)
+		}
 
 		// Save last success time
 		o.ququeTaskMarkSuccess(taskName)
@@ -109,7 +116,7 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		for _, task := range runTasksOnSuccess {
 			name := task.GetName()
 			o.log.Info.Printf("Triggering task %s\n", name)
-			o.ququeTaskExecution(name)
+			o.ququeTaskExecution(name, taskName, message)
 		}
 	}
 
@@ -118,7 +125,9 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		o.log.Error.Printf("Task %s (%s) terminated with FAILURE\n", taskName, podName)
 
 		// Request the deletion of the pod
-		o.ququePodDeletion(podName)
+		if !o.config.KeepPods {
+			o.ququePodDeletion(podName, o.config.DeleteFailedPodDelay)
+		}
 
 		// Save last failure time
 		o.ququeTaskMarkFailure(taskName)
@@ -128,7 +137,7 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 		for _, task := range runTasksOnFailure {
 			name := task.GetName()
 			o.log.Info.Printf("Triggering task %s\n", name)
-			o.ququeTaskExecution(name)
+			o.ququeTaskExecution(name, taskName, message)
 		}
 	}
 }

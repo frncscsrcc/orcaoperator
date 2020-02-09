@@ -99,14 +99,14 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 	// Register the action to be executed in case of success
 	for _, actionName := range task.Spec.SuccessActions {
 		if err := t.AddActionOnSuccess(actionName); err == nil {
-			o.log.Info.Println("Registered success action " + actionName + " for task " + task.ObjectMeta.Name)
+			o.log.Trace.Println("Registered success action " + actionName + " for task " + task.ObjectMeta.Name)
 		}
 	}
 
 	// Register the action to be executed in case of success
 	for _, actionName := range task.Spec.FailureActions {
 		if err := t.AddActionOnFailure(actionName); err == nil {
-			o.log.Info.Println("Registered failure action " + actionName + " for task " + task.ObjectMeta.Name)
+			o.log.Trace.Println("Registered failure action " + actionName + " for task " + task.ObjectMeta.Name)
 		}
 	}
 
@@ -148,7 +148,7 @@ func (o *Operator) deletedTaskHandler(old interface{}) {
 	}
 }
 
-func (o *Operator) executeTask(taskName string, done func()) error {
+func (o *Operator) executeTask(taskName string, initiator string, message string, done func()) error {
 	// Be sure that the task at this point is still present in the cluster
 	task, err := o.getTaskByName(taskName)
 	if err != nil {
@@ -168,7 +168,7 @@ func (o *Operator) executeTask(taskName string, done func()) error {
 	o.log.Info.Println("Executing task " + taskName + " (background)")
 	go done()
 
-	pod := o.getPodObject(task)
+	pod := o.getPodObject(task, initiator, message)
 
 	o.podToObserve[task.ObjectMeta.Name] = true
 
@@ -253,7 +253,7 @@ func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
 	return task, nil
 }
 
-func (o *Operator) getPodObject(task *v1alpha1.Task) *core.Pod {
+func (o *Operator) getPodObject(task *v1alpha1.Task, initiator string, message string) *core.Pod {
 	name := task.ObjectMeta.Name
 	template := task.Spec.Template
 
@@ -276,6 +276,16 @@ func (o *Operator) getPodObject(task *v1alpha1.Task) *core.Pod {
 					Image:           template.Spec.Containers[0].Image,
 					ImagePullPolicy: core.PullIfNotPresent,
 					Command:         template.Spec.Containers[0].Command,
+					Env: []core.EnvVar{
+						core.EnvVar{
+							Name: "ORCA_INITIATOR",
+							Value: initiator,
+						},
+						core.EnvVar{
+							Name: "ORCA_DATA",
+							Value: message,
+						},
+					},
 				},
 			},
 		},

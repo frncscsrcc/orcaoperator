@@ -1,4 +1,4 @@
-# TaskType
+# Task1
 ---
 apiVersion: sirocco.cloud/v1alpha1
 kind: Task
@@ -12,7 +12,6 @@ spec:
     - ignitor1
   startOnSuccess:
   startOnFailure:
-    - task1
   successActions:
   failureActions:
     - SIROCCO-DEMO-ALERT-FAILURE
@@ -21,5 +20,5 @@ spec:
       containers:
       - name: pi
         image: perl
-        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2); exit(0)"]
+        command: ["perl",  "-Mbignum=bpi", "-wle", "sleep(2); open(F, '>/dev/termination-log'); print F 'DATA'; close F;"]
       restartPolicy: Never

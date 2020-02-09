@@ -185,9 +185,9 @@ func (o *Operator) executeIgnitor(ignitorName string, done func()) error {
 			o.log.Error.Println(err)
 			continue
 		}
-		// Add the task in the execution queue
+		// Add the task in the execution queue (no message is sent to the new task)
 		taskCount++
-		o.ququeTaskExecution(taskName)
+		o.ququeTaskExecution(taskName, ignitorName, "")
 	}
 
 	if taskCount == 0 {

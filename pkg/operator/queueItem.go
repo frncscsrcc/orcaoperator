@@ -7,6 +7,8 @@ import (
 type queueItem struct {
 	operation string
 	item      string
+	initiator string
+	message string
 }
 
 func (qi queueItem) getOperation() string {
@@ -21,10 +23,12 @@ func (o *Operator) ququeIgnitorExecution(duration time.Duration, ignitorName str
 	o.workqueue.AddAfter(qi, duration)
 }
 
-func (o *Operator) ququeTaskExecution(taskName string) {
+func (o *Operator) ququeTaskExecution(taskName string, initiator string, message string) {
 	qi := queueItem{
 		operation: "EXECUTE_TASK",
 		item:      taskName,
+		initiator: initiator,
+		message: message,
 	}
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
@@ -37,12 +41,12 @@ func (o *Operator) ququeIgnitorDeletion(ignitorName string) {
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
 
-func (o *Operator) ququePodDeletion(podName string) {
+func (o *Operator) ququePodDeletion(podName string, delay int) {
 	qi := queueItem{
 		operation: "DELETE_POD",
 		item:      podName,
 	}
-	o.workqueue.AddAfter(qi, time.Duration(0))
+	o.workqueue.AddAfter(qi, time.Duration(delay) *time.Second)
 }
 
 func (o *Operator) ququeTaskStatePending(taskName string) {

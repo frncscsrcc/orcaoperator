@@ -12,10 +12,11 @@ spec:
   startOnSuccess:
     - task1
   startOnFailure:
+    - task1
   template:
     spec:
       containers:
       - name: pi
         image: perl
-        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(20)"]
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print 'Received data ' . $ENV{ORCA_DATA}"]
       restartPolicy: Never
