@@ -2,15 +2,13 @@ package actions
 
 import (
 	"errors"
+	"orcaoperator/pkg/actions/plugin"
 	"strings"
-	"orcaoperator/pkg/actions/plugin"	
 )
-
 
 type Action interface {
 	Run(map[string]string) error
 }
-
 
 // GetActionFromName returns a valid Action interface based on the action name
 func GetActionFromName(action string) (Action, error) {

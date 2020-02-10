@@ -8,7 +8,7 @@ type queueItem struct {
 	operation string
 	item      string
 	initiator string
-	message string
+	message   string
 }
 
 func (qi queueItem) getOperation() string {
@@ -28,7 +28,7 @@ func (o *Operator) queueTaskExecution(taskName string, initiator string, message
 		operation: "EXECUTE_TASK",
 		item:      taskName,
 		initiator: initiator,
-		message: message,
+		message:   message,
 	}
 	o.workqueue.AddAfter(qi, time.Duration(0))
 }
@@ -46,7 +46,7 @@ func (o *Operator) queuePodDeletion(podName string, delay int) {
 		operation: "DELETE_POD",
 		item:      podName,
 	}
-	o.workqueue.AddAfter(qi, time.Duration(delay) *time.Second)
+	o.workqueue.AddAfter(qi, time.Duration(delay)*time.Second)
 }
 
 func (o *Operator) queueTaskStatePending(taskName string) {

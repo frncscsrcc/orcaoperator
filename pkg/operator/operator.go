@@ -15,7 +15,7 @@ import (
 )
 
 type Operator struct {
-	namespace string
+	namespace           string
 	coreClientSet       *kubernetes.Clientset
 	coreInformerFactory informers.SharedInformerFactory
 	orcaClientSet       *orcaV1alpha1.Clientset
@@ -167,13 +167,13 @@ func (o *Operator) Run() {
 			o.executeIgnitor(qi.item, itemDone)
 
 		case "EXECUTE_TASK":
-				o.executeTask(qi.item, qi.initiator, qi.message, itemDone)
+			o.executeTask(qi.item, qi.initiator, qi.message, itemDone)
 
 		case "SET_TASK_PENDING":
-				o.changeTaskState(qi.item, "Pending", itemDone)
+			o.changeTaskState(qi.item, "Pending", itemDone)
 
 		case "SET_TASK_RUNNING":
-				o.changeTaskState(qi.item, "Running", itemDone)
+			o.changeTaskState(qi.item, "Running", itemDone)
 
 		case "SET_TASK_SUCCESS_TIME":
 			o.changeCompletedTimeState(qi.item, true /*success*/, itemDone)

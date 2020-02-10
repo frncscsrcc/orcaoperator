@@ -31,7 +31,7 @@ func (o *Operator) registerPods() error {
 		}
 		// Check if the pod is terminated
 		if pod.Status.ContainerStatuses[0].State.Terminated != nil {
-			if !o.config.KeepPods{
+			if !o.config.KeepPods {
 				// Cleaning: delete terminated pod from the cluster
 				o.queuePodDeletion(pod.ObjectMeta.Name, 0)
 			}
@@ -102,9 +102,9 @@ func (o *Operator) updatedPodHandler(old, new interface{}) {
 	// Handle success
 	if terminated.ExitCode == 0 {
 		o.log.Info.Printf("Task %s (%s) terminated with SUCCESS\n", taskName, podName)
-		
+
 		// Request the deletion of the pod
-		if !o.config.KeepPods{
+		if !o.config.KeepPods {
 			o.queuePodDeletion(podName, o.config.DeleteSuccessPodDelay)
 		}
 

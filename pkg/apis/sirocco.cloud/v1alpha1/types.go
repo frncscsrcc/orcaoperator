@@ -28,10 +28,10 @@ type Task struct {
 }
 
 type TaskStatus struct {
-	State       string `json:"state"`
-	LastSuccess string      `json:"lastSuccess"`
-	LastFailure string      `json:"lastFailure"`
-	FailuresCount int      `json:"failuresCount"`
+	State         string `json:"state"`
+	LastSuccess   string `json:"lastSuccess"`
+	LastFailure   string `json:"lastFailure"`
+	FailuresCount int    `json:"failuresCount"`
 }
 
 type TaskSpec struct {

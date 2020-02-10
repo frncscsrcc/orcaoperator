@@ -5,9 +5,9 @@ import (
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/util/retry"
 	"math/rand"
 	"orcaoperator/pkg/apis/sirocco.cloud/v1alpha1"
-	"k8s.io/client-go/util/retry"
 	"time"
 )
 
@@ -81,7 +81,7 @@ func (o *Operator) registerTask(task *v1alpha1.Task) error {
 	o.flow.RemoveTask(task.ObjectMeta.Name)
 
 	// Set the state to pending (TODO we should check is not runnng)
-	if(task.Status.State == ""){
+	if task.Status.State == "" {
 		o.queueTaskStatePending(task.ObjectMeta.Name)
 	}
 
@@ -195,25 +195,25 @@ func (o *Operator) changeTaskState(taskName string, newState string, done func()
 			return err
 		}
 
-		task.Status.State = newState;
+		task.Status.State = newState
 
 		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks(o.namespace).Update(task)
 		return updateErr
-	});
+	})
 
 	if retryErr != nil {
-		return retryErr;
+		return retryErr
 	}
 
 	o.log.Info.Println("Changed state of deployment " + taskName + " in " + newState)
 
-	return nil;
+	return nil
 }
 
 func (o *Operator) changeCompletedTimeState(taskName string, success bool, done func()) error {
 	// We do not need to wait. Release the working queue
 	done()
-	
+
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		// Retrieve the latest version of Task before attempting update
 		// RetryOnConflict uses exponential backoff to avoid exhausting the apiserver
@@ -222,7 +222,7 @@ func (o *Operator) changeCompletedTimeState(taskName string, success bool, done 
 			return err
 		}
 
-		nowString := time.Now().Format("2006-01-02 15:04:05");
+		nowString := time.Now().Format("2006-01-02 15:04:05")
 		if success {
 			task.Status.LastSuccess = nowString
 			task.Status.FailuresCount = 0
@@ -233,15 +233,15 @@ func (o *Operator) changeCompletedTimeState(taskName string, success bool, done 
 
 		_, updateErr := o.orcaClientSet.SiroccoV1alpha1().Tasks(o.namespace).Update(task)
 		return updateErr
-	});
+	})
 
 	if retryErr != nil {
-		return retryErr;
+		return retryErr
 	}
 
-	o.log.Trace.Println("Changed last complete time for " + taskName )
+	o.log.Trace.Println("Changed last complete time for " + taskName)
 
-	return nil;
+	return nil
 }
 
 func (o *Operator) getTaskByName(taskName string) (*v1alpha1.Task, error) {
@@ -278,11 +278,11 @@ func (o *Operator) getPodObject(task *v1alpha1.Task, initiator string, message s
 					Command:         template.Spec.Containers[0].Command,
 					Env: []core.EnvVar{
 						core.EnvVar{
-							Name: "ORCA_INITIATOR",
+							Name:  "ORCA_INITIATOR",
 							Value: initiator,
 						},
 						core.EnvVar{
-							Name: "ORCA_DATA",
+							Name:  "ORCA_DATA",
 							Value: message,
 						},
 					},
